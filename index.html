@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>시민공론장 히스토리</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+      crossorigin="anonymous"
+    >
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="intro-section">
+        <div class="container">
+          <div class="row align-items-end gy-3">
+            <div class="col-12 col-lg-8">
+              <p class="section-kicker mb-2">Governance Timeline</p>
+              <h1 class="display-title mb-3">시민공론장 히스토리</h1>
+              <p class="intro-copy mb-0">매년 이어지는 시민공론장의 준비, 실행, 정책 제안, 후속 활동을 한 화면에서 확인합니다.</p>
+            </div>
+            <div class="col-12 col-lg-4">
+              <div id="dataStatus" class="data-status" role="status" aria-live="polite"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="timeline-section">
+        <div class="container">
+          <div id="timelineRoot" class="timeline-root" aria-live="polite">
+            <div class="loading-wrap">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">로딩 중</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <a href="mailto:minho@hoods.kr">문의: minho@hoods.kr</a>
+      </div>
+    </footer>
+
+    <div
+      class="modal fade"
+      id="globalEventModal"
+      tabindex="-1"
+      aria-labelledby="globalEventModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+          <div class="modal-header">
+            <div>
+              <span id="modalBadge" class="badge text-bg-primary mb-2"></span>
+              <h2 class="modal-title fs-4" id="globalEventModalLabel"></h2>
+              <p id="modalDate" class="modal-date mb-0"></p>
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="닫기"></button>
+          </div>
+          <div id="modalBody" class="modal-body"></div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+      window.TIMELINE_SUPABASE_CONFIG = {
+        url: "https://dkutzurwvvluzouwujvu.supabase.co",
+        anonKey: ""
+      };
+    </script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
