@@ -396,9 +396,8 @@ function renderEmptyState() {
 } // End of renderEmptyState
 
 function renderDataStatus(sourceLabel, count) {
-  const safeSourceLabel = escapeHtml(sourceLabel);
   const safeCount = escapeHtml(String(count));
-  dataStatus.innerHTML = `<strong>${safeSourceLabel}</strong><br>${safeCount}개의 히스토리 기록을 표시 중입니다.`;
+  dataStatus.innerHTML = `<strong>현재 ${safeCount}개의 기록이 있습니다.</strong>`;
 } // End of renderDataStatus
 
 function createTimelineRow(record, index) {
