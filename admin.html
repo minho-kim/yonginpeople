@@ -113,42 +113,18 @@
                   <input id="eventDate" class="form-control" type="date" required>
                 </div>
                 <div class="col-12 col-md-4">
-                  <fieldset class="badge-color-fieldset">
-                    <legend id="badgeColorLabel" class="form-label">배지 색상</legend>
-                    <input id="badgeColor" type="hidden" value="primary">
-                    <div id="badgeColorPicker" class="badge-color-picker" role="radiogroup" aria-labelledby="badgeColorLabel">
-                      <label class="badge-color-radio-label is-selected" title="primary">
-                        <input class="badge-color-radio visually-hidden" type="radio" name="badgeColorChoice" value="primary" checked>
-                        <span class="badge-color-swatch is-primary" aria-hidden="true"></span>
-                        <span class="visually-hidden">primary</span>
-                      </label>
-                      <label class="badge-color-radio-label" title="secondary">
-                        <input class="badge-color-radio visually-hidden" type="radio" name="badgeColorChoice" value="secondary">
-                        <span class="badge-color-swatch is-secondary" aria-hidden="true"></span>
-                        <span class="visually-hidden">secondary</span>
-                      </label>
-                      <label class="badge-color-radio-label" title="success">
-                        <input class="badge-color-radio visually-hidden" type="radio" name="badgeColorChoice" value="success">
-                        <span class="badge-color-swatch is-success" aria-hidden="true"></span>
-                        <span class="visually-hidden">success</span>
-                      </label>
-                      <label class="badge-color-radio-label" title="info">
-                        <input class="badge-color-radio visually-hidden" type="radio" name="badgeColorChoice" value="info">
-                        <span class="badge-color-swatch is-info" aria-hidden="true"></span>
-                        <span class="visually-hidden">info</span>
-                      </label>
-                      <label class="badge-color-radio-label" title="dark">
-                        <input class="badge-color-radio visually-hidden" type="radio" name="badgeColorChoice" value="dark">
-                        <span class="badge-color-swatch is-dark" aria-hidden="true"></span>
-                        <span class="visually-hidden">dark</span>
-                      </label>
-                      <label class="badge-color-radio-label" title="warning">
-                        <input class="badge-color-radio visually-hidden" type="radio" name="badgeColorChoice" value="warning">
-                        <span class="badge-color-swatch is-warning" aria-hidden="true"></span>
-                        <span class="visually-hidden">warning</span>
-                      </label>
-                    </div>
-                  </fieldset>
+                  <label class="form-label" for="badgeColor">배지 색상</label>
+                  <div class="badge-color-select-wrap">
+                    <span id="badgeColorPreview" class="badge-color-swatch is-primary" aria-hidden="true"></span>
+                    <select id="badgeColor" class="form-select">
+                      <option value="primary">primary</option>
+                      <option value="secondary">secondary</option>
+                      <option value="success">success</option>
+                      <option value="info">info</option>
+                      <option value="dark">dark</option>
+                      <option value="warning">warning</option>
+                    </select>
+                  </div>
                 </div>
                 <div class="col-12 col-md-4">
                   <label class="form-label" for="badgeText">배지</label>

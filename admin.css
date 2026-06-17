@@ -212,46 +212,10 @@ body {
   box-shadow: 0 0 0 0.2rem rgba(181, 70, 48, 0.14);
 }
 
-.badge-color-fieldset {
-  margin: 0;
-  padding: 0;
-  border: 0;
-}
-
-.badge-color-picker {
+.badge-color-select-wrap {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
-  min-height: 38px;
-}
-
-.badge-color-radio-label {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  margin: 0;
-  border: 2px solid transparent;
-  border-radius: 999px;
-  background: #ffffff;
-  cursor: pointer;
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-}
-
-.badge-color-radio-label:hover,
-.badge-color-radio-label:focus-within {
-  border-color: rgba(181, 70, 48, 0.5);
-  box-shadow: 0 0 0 0.18rem rgba(181, 70, 48, 0.12);
-  outline: none;
-}
-
-.badge-color-radio-label.is-selected {
-  border-color: var(--admin-primary);
-  box-shadow: 0 0 0 0.18rem rgba(181, 70, 48, 0.16);
-  transform: translateY(-1px);
+  gap: 8px;
 }
 
 .badge-color-swatch {

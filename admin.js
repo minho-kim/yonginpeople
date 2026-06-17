@@ -39,7 +39,7 @@ let formSubtitle = null;
 let recordId = null;
 let eventDate = null;
 let badgeColor = null;
-let badgeColorPicker = null;
+let badgeColorPreview = null;
 let badgeText = null;
 let eventTitle = null;
 let description = null;
@@ -92,7 +92,7 @@ function cacheElements() {
   recordId = document.getElementById("recordId");
   eventDate = document.getElementById("eventDate");
   badgeColor = document.getElementById("badgeColor");
-  badgeColorPicker = document.getElementById("badgeColorPicker");
+  badgeColorPreview = document.getElementById("badgeColorPreview");
   badgeText = document.getElementById("badgeText");
   eventTitle = document.getElementById("eventTitle");
   description = document.getElementById("description");
@@ -117,7 +117,6 @@ function bindEvents() {
   refreshButton.addEventListener("click", handleRefreshClick);
   timelineForm.addEventListener("submit", handleSaveSubmit);
   deleteButton.addEventListener("click", handleDeleteClick);
-  badgeColorPicker.addEventListener("change", handleBadgeColorPickerChange);
   badgeColor.addEventListener("change", handleBadgeColorChange);
   uploadImageButton.addEventListener("click", handleUploadImageClick);
   clearImageButton.addEventListener("click", handleClearImageClick);
@@ -490,41 +489,20 @@ function buildPayloadFromForm() {
   return payload;
 } // End of buildPayloadFromForm
 
-function handleBadgeColorPickerChange(event) {
-  const radio = event.target.closest(".badge-color-radio");
-
-  if (!radio) {
-    return;
-  }
-
-  setSelectedBadgeColor(radio.value);
-  saveFormDraft();
-} // End of handleBadgeColorPickerChange
-
 function handleBadgeColorChange() {
   setSelectedBadgeColor(badgeColor.value);
+  saveFormDraft();
 } // End of handleBadgeColorChange
 
 function setSelectedBadgeColor(value) {
   const nextColor = sanitizeBadgeColor(value);
   badgeColor.value = nextColor;
-  updateSelectedBadgeColorControl(nextColor);
+  updateBadgeColorPreview(nextColor);
 } // End of setSelectedBadgeColor
 
-function updateSelectedBadgeColorControl(selectedColor) {
-  const radios = Array.from(badgeColorPicker.querySelectorAll(".badge-color-radio"));
-
-  for (let index = 0; index < radios.length; index += 1) {
-    const radio = radios[index];
-    const label = radio.closest(".badge-color-radio-label");
-    const isSelected = radio.value === selectedColor;
-    radio.checked = isSelected;
-
-    if (label) {
-      label.classList.toggle("is-selected", isSelected);
-    }
-  }
-} // End of updateSelectedBadgeColorControl
+function updateBadgeColorPreview(selectedColor) {
+  badgeColorPreview.className = `badge-color-swatch is-${sanitizeBadgeColor(selectedColor)}`;
+} // End of updateBadgeColorPreview
 
 function getArticlesFromForm() {
   const rows = Array.from(articleRows.querySelectorAll(".article-row"));
@@ -1254,16 +1232,12 @@ function setFormBusy(isBusy) {
   saveButton.disabled = isBusy;
   deleteButton.disabled = isBusy;
   uploadImageButton.disabled = isBusy;
-  setBadgeColorPickerDisabled(isBusy);
+  setBadgeColorSelectDisabled(isBusy);
 } // End of setFormBusy
 
-function setBadgeColorPickerDisabled(isDisabled) {
-  const radios = Array.from(badgeColorPicker.querySelectorAll(".badge-color-radio"));
-
-  for (let index = 0; index < radios.length; index += 1) {
-    radios[index].disabled = isDisabled;
-  }
-} // End of setBadgeColorPickerDisabled
+function setBadgeColorSelectDisabled(isDisabled) {
+  badgeColor.disabled = isDisabled;
+} // End of setBadgeColorSelectDisabled
 
 function setStatus(message, type) {
   adminStatus.textContent = message || "";
