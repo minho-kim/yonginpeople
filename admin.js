@@ -3,6 +3,7 @@ import { TIMELINE_SUPABASE_CONFIG } from "./config.js";
 
 const TABLE_NAME = "timeline_history";
 const STORAGE_BUCKET = "event-images";
+const DRAFT_STORAGE_KEY = "yonginTimelineAdminDraft";
 const VALID_BADGE_COLORS = ["primary", "secondary", "success", "info", "dark", "warning"];
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
 const MAX_IMAGE_FILE_SIZE = 15 * 1024 * 1024;
@@ -38,6 +39,7 @@ let formSubtitle = null;
 let recordId = null;
 let eventDate = null;
 let badgeColor = null;
+let badgeColorPicker = null;
 let badgeText = null;
 let eventTitle = null;
 let description = null;
@@ -47,6 +49,7 @@ let uploadImageButton = null;
 let clearImageButton = null;
 let imagePreviewWrap = null;
 let imagePreview = null;
+let imageSlider = null;
 let articleRows = null;
 let addArticleButton = null;
 let saveButton = null;
@@ -89,6 +92,7 @@ function cacheElements() {
   recordId = document.getElementById("recordId");
   eventDate = document.getElementById("eventDate");
   badgeColor = document.getElementById("badgeColor");
+  badgeColorPicker = document.getElementById("badgeColorPicker");
   badgeText = document.getElementById("badgeText");
   eventTitle = document.getElementById("eventTitle");
   description = document.getElementById("description");
@@ -98,6 +102,7 @@ function cacheElements() {
   clearImageButton = document.getElementById("clearImageButton");
   imagePreviewWrap = document.getElementById("imagePreviewWrap");
   imagePreview = document.getElementById("imagePreview");
+  imageSlider = document.getElementById("imageSlider");
   articleRows = document.getElementById("articleRows");
   addArticleButton = document.getElementById("addArticleButton");
   saveButton = document.getElementById("saveButton");
@@ -112,11 +117,16 @@ function bindEvents() {
   refreshButton.addEventListener("click", handleRefreshClick);
   timelineForm.addEventListener("submit", handleSaveSubmit);
   deleteButton.addEventListener("click", handleDeleteClick);
+  badgeColorPicker.addEventListener("click", handleBadgeColorPickerClick);
+  badgeColor.addEventListener("change", handleBadgeColorChange);
   uploadImageButton.addEventListener("click", handleUploadImageClick);
   clearImageButton.addEventListener("click", handleClearImageClick);
   imageUrl.addEventListener("input", handleImageUrlInput);
+  imageSlider.addEventListener("click", handleImageSliderClick);
   addArticleButton.addEventListener("click", handleAddArticleClick);
   articleRows.addEventListener("click", handleArticleRowsClick);
+  timelineForm.addEventListener("input", handleTimelineFormInput);
+  timelineForm.addEventListener("change", handleTimelineFormInput);
 } // End of bindEvents
 
 function renderIcons() {
@@ -249,6 +259,7 @@ async function showAuthenticatedState(user) {
   setStatus(`${email} 계정으로 접속 중입니다.`, "success");
   resetFormForNewRecord();
   await loadRecords();
+  restoreFormDraft();
 } // End of showAuthenticatedState
 
 function showUnauthenticatedState() {
@@ -329,7 +340,16 @@ function createRecordButton(record) {
 
   const meta = document.createElement("div");
   meta.className = "record-meta";
-  meta.textContent = record.badge_text;
+
+  const metaSwatch = document.createElement("span");
+  metaSwatch.className = `badge-color-swatch record-meta-swatch is-${sanitizeBadgeColor(record.badge_color)}`;
+  metaSwatch.setAttribute("aria-hidden", "true");
+
+  const metaText = document.createElement("span");
+  metaText.textContent = record.badge_text;
+
+  meta.appendChild(metaSwatch);
+  meta.appendChild(metaText);
 
   button.appendChild(date);
   button.appendChild(title);
@@ -372,11 +392,11 @@ function selectRecordById(nextRecordId) {
 function renderRecordForm(record) {
   recordId.value = record.id;
   eventDate.value = getDateInputValue(record.event_date);
-  badgeColor.value = sanitizeBadgeColor(record.badge_color);
+  setSelectedBadgeColor(record.badge_color);
   badgeText.value = record.badge_text;
   eventTitle.value = record.title;
   description.value = record.description;
-  imageUrl.value = record.image_url;
+  imageUrl.value = serializeImageUrls(record.image_urls);
   formTitle.textContent = "기록 수정";
   formSubtitle.textContent = record.title;
   deleteButton.classList.remove("d-none");
@@ -389,7 +409,7 @@ function resetFormForNewRecord() {
   selectedRecordId = "";
   recordId.value = "";
   eventDate.value = "";
-  badgeColor.value = "primary";
+  setSelectedBadgeColor("primary");
   badgeText.value = "";
   eventTitle.value = "";
   description.value = "";
@@ -405,12 +425,19 @@ function resetFormForNewRecord() {
 } // End of resetFormForNewRecord
 
 function handleNewRecordClick() {
+  clearFormDraft();
   resetFormForNewRecord();
   setStatus("새 기록을 작성합니다.", "neutral");
 } // End of handleNewRecordClick
 
 async function handleRefreshClick() {
+  saveFormDraft();
   await loadRecords();
+  if (restoreFormDraft()) {
+    setStatus("목록을 새로고침하고 작성 중이던 내용을 복원했습니다.", "neutral");
+    return;
+  }
+
   setStatus("목록을 새로고침했습니다.", "success");
 } // End of handleRefreshClick
 
@@ -431,6 +458,7 @@ async function handleSaveSubmit(event) {
   }
 
   selectedRecordId = savedRecord.id;
+  clearFormDraft();
   setStatus("저장되었습니다.", "success");
   await loadRecords();
   selectRecordById(savedRecord.id);
@@ -442,18 +470,57 @@ function buildPayloadFromForm() {
     return null;
   }
 
+  const articleResult = getArticlesFromForm();
+  if (!articleResult.isValid) {
+    setStatus(articleResult.message, "danger");
+    return null;
+  }
+
+  const imageUrls = getImageUrlsFromImageUrlInput();
   const payload = {
     event_date: formatDateForStorage(eventDate.value),
     badge_text: badgeText.value.trim(),
     badge_color: sanitizeBadgeColor(badgeColor.value),
     title: eventTitle.value.trim(),
     description: description.value.trim() || null,
-    image_url: imageUrl.value.trim() || null,
-    articles: getArticlesFromForm()
+    image_url: serializeImageUrls(imageUrls) || null,
+    articles: articleResult.articles
   };
 
   return payload;
 } // End of buildPayloadFromForm
+
+function handleBadgeColorPickerClick(event) {
+  const button = event.target.closest(".badge-color-option");
+
+  if (!button) {
+    return;
+  }
+
+  setSelectedBadgeColor(button.dataset.badgeColor);
+  saveFormDraft();
+} // End of handleBadgeColorPickerClick
+
+function handleBadgeColorChange() {
+  setSelectedBadgeColor(badgeColor.value);
+} // End of handleBadgeColorChange
+
+function setSelectedBadgeColor(value) {
+  const nextColor = sanitizeBadgeColor(value);
+  badgeColor.value = nextColor;
+  updateSelectedBadgeColorControl(nextColor);
+} // End of setSelectedBadgeColor
+
+function updateSelectedBadgeColorControl(selectedColor) {
+  const buttons = Array.from(badgeColorPicker.querySelectorAll(".badge-color-option"));
+
+  for (let index = 0; index < buttons.length; index += 1) {
+    const button = buttons[index];
+    const isSelected = button.dataset.badgeColor === selectedColor;
+    button.classList.toggle("is-selected", isSelected);
+    button.setAttribute("aria-pressed", isSelected ? "true" : "false");
+  }
+} // End of updateSelectedBadgeColorControl
 
 function getArticlesFromForm() {
   const rows = Array.from(articleRows.querySelectorAll(".article-row"));
@@ -465,16 +532,148 @@ function getArticlesFromForm() {
     const titleValue = titleInput ? titleInput.value.trim() : "";
     const urlValue = urlInput ? urlInput.value.trim() : "";
 
-    if (titleValue && urlValue) {
-      articles.push({
-        title: titleValue,
-        url: urlValue
-      });
+    if (!titleValue && !urlValue) {
+      continue;
+    }
+
+    if (!titleValue || !urlValue) {
+      return {
+        isValid: false,
+        message: "관련 기사는 제목과 링크를 모두 입력해야 저장됩니다.",
+        articles: []
+      };
+    }
+
+    const normalizedUrl = normalizeArticleUrl(urlValue);
+    if (!normalizedUrl) {
+      return {
+        isValid: false,
+        message: "관련 기사 링크는 http 또는 https 주소로 입력해 주세요.",
+        articles: []
+      };
+    }
+
+    articles.push({
+      title: titleValue,
+      url: normalizedUrl
+    });
+  }
+
+  return {
+    isValid: true,
+    message: "",
+    articles: articles
+  };
+} // End of getArticlesFromForm
+
+function normalizeArticleUrl(value) {
+  const rawValue = String(value || "").trim();
+
+  if (!rawValue) {
+    return "";
+  }
+
+  const candidateUrl = /^[a-z][a-z\d+.-]*:/i.test(rawValue) ? rawValue : `https://${rawValue}`;
+
+  try {
+    const parsedUrl = new URL(candidateUrl);
+
+    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
+      return parsedUrl.href;
+    }
+  } catch (error) {
+    console.warn("Invalid article URL skipped:", error);
+  }
+
+  return "";
+} // End of normalizeArticleUrl
+
+function getImageUrlsFromImageUrlInput() {
+  return normalizeImageUrls(imageUrl.value);
+} // End of getImageUrlsFromImageUrlInput
+
+function normalizeImageUrls(value) {
+  const rawValue = String(value || "").trim();
+  const imageUrls = [];
+
+  if (!rawValue) {
+    return imageUrls;
+  }
+
+  const parsedUrls = parseImageUrlValue(rawValue);
+
+  for (let index = 0; index < parsedUrls.length; index += 1) {
+    const normalizedUrl = normalizeImageUrl(parsedUrls[index]);
+
+    if (normalizedUrl && !imageUrls.includes(normalizedUrl)) {
+      imageUrls.push(normalizedUrl);
     }
   }
 
-  return articles;
-} // End of getArticlesFromForm
+  return imageUrls;
+} // End of normalizeImageUrls
+
+function parseImageUrlValue(value) {
+  const rawValue = String(value || "").trim();
+
+  if (!rawValue) {
+    return [];
+  }
+
+  if (rawValue.startsWith("[")) {
+    try {
+      const parsedValue = JSON.parse(rawValue);
+
+      if (Array.isArray(parsedValue)) {
+        return parsedValue;
+      }
+    } catch (error) {
+      console.warn("Image URL JSON parse failed:", error);
+    }
+  }
+
+  return rawValue.split(/\r?\n/);
+} // End of parseImageUrlValue
+
+function normalizeImageUrl(value) {
+  const rawValue = String(value || "").trim();
+
+  if (!rawValue) {
+    return "";
+  }
+
+  try {
+    const parsedUrl = new URL(rawValue);
+
+    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
+      return parsedUrl.href;
+    }
+  } catch (error) {
+    console.warn("Invalid image URL skipped:", error);
+  }
+
+  return "";
+} // End of normalizeImageUrl
+
+function serializeImageUrls(imageUrls) {
+  const normalizedUrls = mergeImageUrls([], imageUrls || []);
+  return normalizedUrls.join("\n");
+} // End of serializeImageUrls
+
+function mergeImageUrls(existingImageUrls, additionalImageUrls) {
+  const mergedImageUrls = [];
+  const sourceImageUrls = [...(existingImageUrls || []), ...(additionalImageUrls || [])];
+
+  for (let index = 0; index < sourceImageUrls.length; index += 1) {
+    const normalizedUrl = normalizeImageUrl(sourceImageUrls[index]);
+
+    if (normalizedUrl && !mergedImageUrls.includes(normalizedUrl)) {
+      mergedImageUrls.push(normalizedUrl);
+    }
+  }
+
+  return mergedImageUrls;
+} // End of mergeImageUrls
 
 async function saveRecord(payload) {
   const currentId = recordId.value.trim();
@@ -514,39 +713,45 @@ async function handleDeleteClick() {
   }
 
   selectedRecordId = "";
+  clearFormDraft();
   setStatus("삭제되었습니다.", "success");
   await loadRecords();
   resetFormForNewRecord();
 } // End of handleDeleteClick
 
 async function handleUploadImageClick() {
-  const file = imageFile.files && imageFile.files.length ? imageFile.files[0] : null;
+  const files = imageFile.files ? Array.from(imageFile.files) : [];
 
-  if (!file) {
+  if (!files.length) {
     setStatus("업로드할 사진을 선택하세요.", "danger");
     return;
   }
 
-  if (!isAllowedImageFile(file)) {
-    setStatus("JPG, PNG, WebP, GIF, HEIC 형식의 15MB 이하 사진만 업로드할 수 있습니다.", "danger");
-    return;
+  for (let index = 0; index < files.length; index += 1) {
+    if (!isAllowedImageFile(files[index])) {
+      setStatus("JPG, PNG, WebP, GIF, HEIC 형식의 15MB 이하 사진만 업로드할 수 있습니다.", "danger");
+      return;
+    }
   }
 
   uploadImageButton.disabled = true;
-  setStatus("사진을 업로드하는 중입니다.", "neutral");
+  setStatus(`${files.length}개의 사진을 업로드하는 중입니다.`, "neutral");
 
-  const publicUrl = await uploadImage(file);
+  const publicUrls = await uploadImages(files);
   uploadImageButton.disabled = false;
 
-  if (!publicUrl) {
+  if (!publicUrls.length) {
     return;
   }
 
-  imageUrl.value = publicUrl;
+  const nextImageUrls = mergeImageUrls(getImageUrlsFromImageUrlInput(), publicUrls);
+  imageUrl.value = serializeImageUrls(nextImageUrls);
+  imageFile.value = "";
   updateImagePreview();
+  saveFormDraft();
 
   if (recordId.value.trim()) {
-    await saveCurrentRecordImageUrl(publicUrl);
+    await saveCurrentRecordImageUrls(nextImageUrls);
     return;
   }
 
@@ -589,17 +794,18 @@ function getFileExtension(fileName) {
   return segments[segments.length - 1];
 } // End of getFileExtension
 
-async function saveCurrentRecordImageUrl(publicUrl) {
+async function saveCurrentRecordImageUrls(nextImageUrls) {
   const currentId = recordId.value.trim();
 
   if (!currentId) {
     return;
   }
 
+  const serializedImageUrls = serializeImageUrls(nextImageUrls);
   const response = await supabaseClient
     .from(TABLE_NAME)
     .update({
-      image_url: publicUrl
+      image_url: serializedImageUrls || null
     })
     .eq("id", currentId)
     .select("*")
@@ -611,9 +817,37 @@ async function saveCurrentRecordImageUrl(publicUrl) {
   }
 
   setStatus("사진 업로드와 기록 반영이 완료되었습니다.", "success");
-  await loadRecords();
-  selectRecordById(currentId);
-} // End of saveCurrentRecordImageUrl
+  updateRecordImageUrls(currentId, nextImageUrls);
+  renderRecordList(records);
+} // End of saveCurrentRecordImageUrls
+
+async function uploadImages(files) {
+  const publicUrls = [];
+
+  for (let index = 0; index < files.length; index += 1) {
+    const publicUrl = await uploadImage(files[index]);
+
+    if (!publicUrl) {
+      return [];
+    }
+
+    publicUrls.push(publicUrl);
+  }
+
+  return publicUrls;
+} // End of uploadImages
+
+function updateRecordImageUrls(currentId, nextImageUrls) {
+  const serializedImageUrls = serializeImageUrls(nextImageUrls);
+
+  for (let index = 0; index < records.length; index += 1) {
+    if (records[index].id === currentId) {
+      records[index].image_url = serializedImageUrls;
+      records[index].image_urls = [...nextImageUrls];
+      break;
+    }
+  }
+} // End of updateRecordImageUrls
 
 async function uploadImage(file) {
   const storagePath = buildStoragePath(file);
@@ -667,24 +901,111 @@ function handleClearImageClick() {
   imageUrl.value = "";
   imageFile.value = "";
   updateImagePreview();
+  saveFormDraft();
 } // End of handleClearImageClick
 
 function handleImageUrlInput() {
   updateImagePreview();
+  saveFormDraft();
 } // End of handleImageUrlInput
 
-function updateImagePreview() {
-  const value = imageUrl.value.trim();
-
-  if (!value) {
-    imagePreview.removeAttribute("src");
-    imagePreviewWrap.classList.add("d-none");
+function handleImageSliderClick(event) {
+  const removeButton = event.target.closest(".image-slide-remove");
+  if (removeButton) {
+    removeImageUrlAtIndex(Number(removeButton.dataset.imageIndex));
     return;
   }
 
-  imagePreview.src = value;
+  const slideButton = event.target.closest(".image-slide-button");
+  if (slideButton) {
+    setActivePreviewImage(Number(slideButton.dataset.imageIndex));
+  }
+} // End of handleImageSliderClick
+
+function updateImagePreview() {
+  const imageUrls = getImageUrlsFromImageUrlInput();
+
+  if (!imageUrls.length) {
+    imagePreview.removeAttribute("src");
+    imagePreviewWrap.classList.add("d-none");
+    imageSlider.classList.add("d-none");
+    imageSlider.innerHTML = "";
+    return;
+  }
+
+  imagePreview.src = imageUrls[0];
   imagePreviewWrap.classList.remove("d-none");
+  renderImageSlider(imageUrls, 0);
 } // End of updateImagePreview
+
+function renderImageSlider(imageUrls, activeIndex) {
+  imageSlider.innerHTML = "";
+
+  if (!imageUrls.length) {
+    imageSlider.classList.add("d-none");
+    return;
+  }
+
+  const fragment = document.createDocumentFragment();
+
+  for (let index = 0; index < imageUrls.length; index += 1) {
+    fragment.appendChild(createImageSlide(imageUrls[index], index, activeIndex));
+  }
+
+  imageSlider.appendChild(fragment);
+  imageSlider.classList.remove("d-none");
+} // End of renderImageSlider
+
+function createImageSlide(imageUrlValue, index, activeIndex) {
+  const slide = document.createElement("div");
+  slide.className = index === activeIndex ? "image-slide is-active" : "image-slide";
+
+  const button = document.createElement("button");
+  button.className = "image-slide-button";
+  button.type = "button";
+  button.dataset.imageIndex = String(index);
+  button.setAttribute("aria-label", `${index + 1}번째 사진 미리보기`);
+
+  const image = document.createElement("img");
+  image.src = imageUrlValue;
+  image.alt = "";
+
+  const removeButton = document.createElement("button");
+  removeButton.className = "image-slide-remove";
+  removeButton.type = "button";
+  removeButton.dataset.imageIndex = String(index);
+  removeButton.setAttribute("aria-label", `${index + 1}번째 사진 삭제`);
+  removeButton.textContent = "삭제";
+
+  button.appendChild(image);
+  slide.appendChild(button);
+  slide.appendChild(removeButton);
+  return slide;
+} // End of createImageSlide
+
+function setActivePreviewImage(index) {
+  const imageUrls = getImageUrlsFromImageUrlInput();
+
+  if (index < 0 || index >= imageUrls.length) {
+    return;
+  }
+
+  imagePreview.src = imageUrls[index];
+  renderImageSlider(imageUrls, index);
+} // End of setActivePreviewImage
+
+function removeImageUrlAtIndex(index) {
+  const imageUrls = getImageUrlsFromImageUrlInput();
+
+  if (index < 0 || index >= imageUrls.length) {
+    return;
+  }
+
+  imageUrls.splice(index, 1);
+  imageUrl.value = serializeImageUrls(imageUrls);
+  updateImagePreview();
+  saveFormDraft();
+} // End of removeImageUrlAtIndex
 
 function handleAddArticleClick() {
   appendArticleRow({
@@ -692,6 +1013,7 @@ function handleAddArticleClick() {
     url: ""
   });
   renderIcons();
+  saveFormDraft();
 } // End of handleAddArticleClick
 
 function renderArticleRows(articles) {
@@ -718,7 +1040,8 @@ function createArticleRow(article) {
 
   const urlInput = document.createElement("input");
   urlInput.className = "form-control article-url-input";
-  urlInput.type = "url";
+  urlInput.type = "text";
+  urlInput.inputMode = "url";
   urlInput.placeholder = "https://";
   urlInput.value = article && article.url ? article.url : "";
 
@@ -745,8 +1068,172 @@ function handleArticleRowsClick(event) {
 
   if (row) {
     row.remove();
+    saveFormDraft();
   }
 } // End of handleArticleRowsClick
+
+function handleTimelineFormInput(event) {
+  if (event.target === imageFile) {
+    return;
+  }
+
+  saveFormDraft();
+} // End of handleTimelineFormInput
+
+function saveFormDraft() {
+  const draftStorage = getDraftStorage();
+
+  if (!draftStorage || adminSection.classList.contains("d-none")) {
+    return;
+  }
+
+  const draft = {
+    record_id: recordId.value.trim(),
+    event_date: eventDate.value.trim(),
+    badge_color: sanitizeBadgeColor(badgeColor.value),
+    badge_text: badgeText.value,
+    title: eventTitle.value,
+    description: description.value,
+    image_url: imageUrl.value,
+    articles: getArticleDraftsFromForm()
+  };
+
+  if (!isMeaningfulDraft(draft)) {
+    clearFormDraft();
+    return;
+  }
+
+  try {
+    draftStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  } catch (error) {
+    console.warn("Failed to save form draft:", error);
+  }
+} // End of saveFormDraft
+
+function restoreFormDraft() {
+  const draft = readFormDraft();
+
+  if (!draft) {
+    return false;
+  }
+
+  const matchingRecord = findRecordById(draft.record_id);
+
+  if (matchingRecord) {
+    selectedRecordId = matchingRecord.id;
+    renderRecordForm(matchingRecord);
+  } else {
+    resetFormForNewRecord();
+  }
+
+  recordId.value = matchingRecord ? matchingRecord.id : "";
+  selectedRecordId = matchingRecord ? matchingRecord.id : "";
+  eventDate.value = typeof draft.event_date === "string" ? draft.event_date : "";
+  setSelectedBadgeColor(draft.badge_color);
+  badgeText.value = typeof draft.badge_text === "string" ? draft.badge_text : "";
+  eventTitle.value = typeof draft.title === "string" ? draft.title : "";
+  description.value = typeof draft.description === "string" ? draft.description : "";
+  imageUrl.value = typeof draft.image_url === "string" ? draft.image_url : "";
+  renderArticleRows(Array.isArray(draft.articles) ? draft.articles : []);
+  updateImagePreview();
+  renderRecordList(records);
+  renderIcons();
+  setStatus("작성 중이던 내용을 복원했습니다.", "neutral");
+  return true;
+} // End of restoreFormDraft
+
+function readFormDraft() {
+  const draftStorage = getDraftStorage();
+
+  if (!draftStorage) {
+    return null;
+  }
+
+  try {
+    const rawDraft = draftStorage.getItem(DRAFT_STORAGE_KEY);
+
+    if (!rawDraft) {
+      return null;
+    }
+
+    return JSON.parse(rawDraft);
+  } catch (error) {
+    console.warn("Failed to read form draft:", error);
+    return null;
+  }
+} // End of readFormDraft
+
+function clearFormDraft() {
+  const draftStorage = getDraftStorage();
+
+  if (!draftStorage) {
+    return;
+  }
+
+  try {
+    draftStorage.removeItem(DRAFT_STORAGE_KEY);
+  } catch (error) {
+    console.warn("Failed to clear form draft:", error);
+  }
+} // End of clearFormDraft
+
+function getDraftStorage() {
+  try {
+    return window.localStorage || null;
+  } catch (error) {
+    console.warn("Draft storage is not available:", error);
+    return null;
+  }
+} // End of getDraftStorage
+
+function isMeaningfulDraft(draft) {
+  if (!draft) {
+    return false;
+  }
+
+  if (draft.record_id || draft.event_date || draft.badge_text || draft.title || draft.description || draft.image_url) {
+    return true;
+  }
+
+  return Array.isArray(draft.articles) && draft.articles.length > 0;
+} // End of isMeaningfulDraft
+
+function getArticleDraftsFromForm() {
+  const rows = Array.from(articleRows.querySelectorAll(".article-row"));
+  const articles = [];
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const titleInput = rows[index].querySelector(".article-title-input");
+    const urlInput = rows[index].querySelector(".article-url-input");
+    const titleValue = titleInput ? titleInput.value : "";
+    const urlValue = urlInput ? urlInput.value : "";
+
+    if (titleValue || urlValue) {
+      articles.push({
+        title: titleValue,
+        url: urlValue
+      });
+    }
+  }
+
+  return articles;
+} // End of getArticleDraftsFromForm
+
+function findRecordById(nextRecordId) {
+  const recordIdValue = String(nextRecordId || "");
+
+  if (!recordIdValue) {
+    return null;
+  }
+
+  for (let index = 0; index < records.length; index += 1) {
+    if (records[index].id === recordIdValue) {
+      return records[index];
+    }
+  }
+
+  return null;
+} // End of findRecordById
 
 function setLoginBusy(isBusy) {
   loginButton.disabled = isBusy;
@@ -763,7 +1250,16 @@ function setFormBusy(isBusy) {
   saveButton.disabled = isBusy;
   deleteButton.disabled = isBusy;
   uploadImageButton.disabled = isBusy;
+  setBadgeColorPickerDisabled(isBusy);
 } // End of setFormBusy
+
+function setBadgeColorPickerDisabled(isDisabled) {
+  const buttons = Array.from(badgeColorPicker.querySelectorAll(".badge-color-option"));
+
+  for (let index = 0; index < buttons.length; index += 1) {
+    buttons[index].disabled = isDisabled;
+  }
+} // End of setBadgeColorPickerDisabled
 
 function setStatus(message, type) {
   adminStatus.textContent = message || "";
@@ -783,6 +1279,7 @@ function normalizeRecords(rawRecords) {
 
 function normalizeRecord(rawRecord, index) {
   const sourceRecord = rawRecord || {};
+  const imageUrls = normalizeImageUrls(sourceRecord.image_url);
   return {
     id: String(sourceRecord.id || `record-${index + 1}`),
     created_at: String(sourceRecord.created_at || ""),
@@ -791,7 +1288,8 @@ function normalizeRecord(rawRecord, index) {
     badge_color: sanitizeBadgeColor(sourceRecord.badge_color),
     title: String(sourceRecord.title || ""),
     description: String(sourceRecord.description || ""),
-    image_url: String(sourceRecord.image_url || ""),
+    image_url: serializeImageUrls(imageUrls),
+    image_urls: imageUrls,
     articles: normalizeArticles(sourceRecord.articles)
   };
 } // End of normalizeRecord

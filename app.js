@@ -309,6 +309,7 @@ function normalizeTimelineRecords(records) {
 
   for (let index = 0; index < records.length; index += 1) {
     const sourceRecord = records[index] || {};
+    const imageUrls = normalizeImageUrls(sourceRecord.image_url);
     normalizedRecords.push({
       id: String(sourceRecord.id || `record-${index + 1}`),
       created_at: String(sourceRecord.created_at || ""),
@@ -317,7 +318,8 @@ function normalizeTimelineRecords(records) {
       badge_color: sanitizeBadgeColor(sourceRecord.badge_color),
       title: String(sourceRecord.title || "제목 없음"),
       description: String(sourceRecord.description || ""),
-      image_url: sanitizeHttpUrl(sourceRecord.image_url),
+      image_url: serializeImageUrls(imageUrls),
+      image_urls: imageUrls,
       articles: normalizeArticles(sourceRecord.articles)
     });
   }
@@ -357,6 +359,63 @@ function normalizeArticles(rawArticles) {
 
   return normalizedArticles;
 } // End of normalizeArticles
+
+function normalizeImageUrls(value) {
+  const rawValue = String(value || "").trim();
+  const imageUrls = [];
+
+  if (!rawValue) {
+    return imageUrls;
+  }
+
+  const parsedUrls = parseImageUrlValue(rawValue);
+
+  for (let index = 0; index < parsedUrls.length; index += 1) {
+    const url = sanitizeHttpUrl(parsedUrls[index]);
+
+    if (url && !imageUrls.includes(url)) {
+      imageUrls.push(url);
+    }
+  }
+
+  return imageUrls;
+} // End of normalizeImageUrls
+
+function parseImageUrlValue(value) {
+  const rawValue = String(value || "").trim();
+
+  if (!rawValue) {
+    return [];
+  }
+
+  if (rawValue.startsWith("[")) {
+    try {
+      const parsedValue = JSON.parse(rawValue);
+
+      if (Array.isArray(parsedValue)) {
+        return parsedValue;
+      }
+    } catch (error) {
+      console.warn("Image URL JSON parse failed:", error);
+    }
+  }
+
+  return rawValue.split(/\r?\n/);
+} // End of parseImageUrlValue
+
+function serializeImageUrls(imageUrls) {
+  const normalizedUrls = [];
+
+  for (let index = 0; index < imageUrls.length; index += 1) {
+    const url = sanitizeHttpUrl(imageUrls[index]);
+
+    if (url && !normalizedUrls.includes(url)) {
+      normalizedUrls.push(url);
+    }
+  }
+
+  return normalizedUrls.join("\n");
+} // End of serializeImageUrls
 
 function renderLoadingState() {
   timelineRoot.innerHTML = `
@@ -577,14 +636,35 @@ function buildModalBodyHtml(record) {
 } // End of buildModalBodyHtml
 
 function buildImageHtml(record) {
-  if (!record.image_url) {
+  const imageUrls = Array.isArray(record.image_urls) ? record.image_urls : normalizeImageUrls(record.image_url);
+
+  if (!imageUrls.length) {
     return "";
   }
 
+  if (imageUrls.length === 1) {
+    return `
+      <figure class="mb-4">
+        <img class="modal-image" src="${escapeHtml(imageUrls[0])}" alt="${escapeHtml(record.title)} 행사 사진">
+      </figure>
+    `;
+  }
+
+  let slideHtml = "";
+
+  for (let index = 0; index < imageUrls.length; index += 1) {
+    slideHtml += `
+      <figure class="modal-image-slide">
+        <img class="modal-image" src="${escapeHtml(imageUrls[index])}" alt="${escapeHtml(record.title)} 행사 사진 ${index + 1}">
+        <figcaption>${index + 1} / ${imageUrls.length}</figcaption>
+      </figure>
+    `;
+  }
+
   return `
-    <figure class="mb-4">
-      <img class="modal-image" src="${escapeHtml(record.image_url)}" alt="${escapeHtml(record.title)} 행사 사진">
-    </figure>
+    <section class="modal-image-gallery mb-4" aria-label="행사 사진">
+      <div class="modal-image-slider">${slideHtml}</div>
+    </section>
   `;
 } // End of buildImageHtml
 

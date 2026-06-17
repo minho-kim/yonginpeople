@@ -282,6 +282,33 @@ a:hover {
   background: #e7dfd3;
 }
 
+.modal-image-gallery {
+  overflow: hidden;
+}
+
+.modal-image-slider {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scroll-snap-type: x mandatory;
+}
+
+.modal-image-slide {
+  flex: 0 0 min(88%, 640px);
+  margin: 0;
+  scroll-snap-align: start;
+}
+
+.modal-image-slide figcaption {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: right;
+}
+
 .modal-description {
   color: var(--ink);
   font-size: 1rem;

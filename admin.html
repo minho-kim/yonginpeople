@@ -113,8 +113,8 @@
                   <input id="eventDate" class="form-control" type="date" required>
                 </div>
                 <div class="col-12 col-md-4">
-                  <label class="form-label" for="badgeColor">배지 색상</label>
-                  <select id="badgeColor" class="form-select">
+                  <label id="badgeColorLabel" class="form-label" for="badgeColor">배지 색상</label>
+                  <select id="badgeColor" class="badge-color-native-select" tabindex="-1" aria-hidden="true">
                     <option value="primary">primary</option>
                     <option value="secondary">secondary</option>
                     <option value="success">success</option>
@@ -122,6 +122,32 @@
                     <option value="dark">dark</option>
                     <option value="warning">warning</option>
                   </select>
+                  <div id="badgeColorPicker" class="badge-color-picker" role="group" aria-labelledby="badgeColorLabel">
+                    <button class="badge-color-option is-selected" type="button" data-badge-color="primary" aria-pressed="true">
+                      <span class="badge-color-swatch is-primary" aria-hidden="true"></span>
+                      <span>파랑</span>
+                    </button>
+                    <button class="badge-color-option" type="button" data-badge-color="secondary" aria-pressed="false">
+                      <span class="badge-color-swatch is-secondary" aria-hidden="true"></span>
+                      <span>회색</span>
+                    </button>
+                    <button class="badge-color-option" type="button" data-badge-color="success" aria-pressed="false">
+                      <span class="badge-color-swatch is-success" aria-hidden="true"></span>
+                      <span>초록</span>
+                    </button>
+                    <button class="badge-color-option" type="button" data-badge-color="info" aria-pressed="false">
+                      <span class="badge-color-swatch is-info" aria-hidden="true"></span>
+                      <span>하늘</span>
+                    </button>
+                    <button class="badge-color-option" type="button" data-badge-color="dark" aria-pressed="false">
+                      <span class="badge-color-swatch is-dark" aria-hidden="true"></span>
+                      <span>검정</span>
+                    </button>
+                    <button class="badge-color-option" type="button" data-badge-color="warning" aria-pressed="false">
+                      <span class="badge-color-swatch is-warning" aria-hidden="true"></span>
+                      <span>노랑</span>
+                    </button>
+                  </div>
                 </div>
                 <div class="col-12 col-md-4">
                   <label class="form-label" for="badgeText">배지</label>
@@ -136,18 +162,19 @@
                   <textarea id="description" class="form-control" rows="6"></textarea>
                 </div>
                 <div class="col-12">
-                  <label class="form-label" for="imageUrl">사진 URL</label>
-                  <div class="input-group">
-                    <input id="imageUrl" class="form-control" type="url">
-                    <button id="clearImageButton" class="btn btn-outline-secondary icon-only" type="button" aria-label="사진 URL 비우기">
+                  <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                    <label class="form-label mb-0" for="imageUrl">사진 URL 목록</label>
+                    <button id="clearImageButton" class="btn btn-outline-secondary btn-sm icon-button" type="button">
                       <i data-lucide="x" aria-hidden="true"></i>
+                      <span>전체 비우기</span>
                     </button>
                   </div>
+                  <textarea id="imageUrl" class="form-control" rows="3" placeholder="사진 URL을 한 줄에 하나씩 입력"></textarea>
                 </div>
                 <div class="col-12">
                   <label class="form-label" for="imageFile">사진 업로드</label>
                   <div class="input-group">
-                    <input id="imageFile" class="form-control" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif">
+                    <input id="imageFile" class="form-control" type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/heic,image/heif" multiple>
                     <button id="uploadImageButton" class="btn btn-outline-primary icon-button" type="button">
                       <i data-lucide="upload" aria-hidden="true"></i>
                       <span>업로드</span>
@@ -158,6 +185,7 @@
                   <div id="imagePreviewWrap" class="image-preview-wrap d-none">
                     <img id="imagePreview" class="image-preview" alt="업로드된 행사 사진 미리보기">
                   </div>
+                  <div id="imageSlider" class="image-slider d-none" aria-label="업로드된 사진 목록"></div>
                 </div>
                 <div class="col-12">
                   <div class="article-header">
