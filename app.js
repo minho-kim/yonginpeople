@@ -1,4 +1,5 @@
 import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { TIMELINE_SUPABASE_CONFIG } from "./config.js";
 
 const VALID_BADGE_COLORS = ["primary", "secondary", "success", "info", "dark", "warning"];
 const HTML_ESCAPE_MAP = {
@@ -186,7 +187,7 @@ async function initializeApp() {
 } // End of initializeApp
 
 function getSupabaseConfig() {
-  const rawConfig = window.TIMELINE_SUPABASE_CONFIG || {};
+  const rawConfig = TIMELINE_SUPABASE_CONFIG || window.TIMELINE_SUPABASE_CONFIG || {};
   return {
     url: typeof rawConfig.url === "string" ? rawConfig.url.trim() : "",
     anonKey: typeof rawConfig.anonKey === "string" ? rawConfig.anonKey.trim() : ""
@@ -214,14 +215,14 @@ async function fetchTimelineData(shouldShowLoading) {
     const response = await supabaseClient
       .from("timeline_history")
       .select("*")
-      .order("sort_order", { ascending: true })
-      .order("created_at", { ascending: true });
+      .order("sort_order", { ascending: false })
+      .order("created_at", { ascending: false });
 
     if (response.error) {
       throw response.error;
     }
 
-    timelineRecords = normalizeTimelineRecords(response.data || []);
+    timelineRecords = getNewestFirstRecords(normalizeTimelineRecords(response.data || []));
     renderTimeline(timelineRecords);
     renderDataStatus("Supabase", timelineRecords.length);
   } catch (error) {
@@ -261,10 +262,25 @@ function handleSubscriptionStatus(status, error) {
 } // End of handleSubscriptionStatus
 
 function renderFallbackTimeline(sourceLabel) {
-  timelineRecords = normalizeTimelineRecords(FALLBACK_TIMELINE_DATA);
+  timelineRecords = getNewestFirstRecords(normalizeTimelineRecords(FALLBACK_TIMELINE_DATA));
   renderTimeline(timelineRecords);
   renderDataStatus(sourceLabel, timelineRecords.length);
 } // End of renderFallbackTimeline
+
+function getNewestFirstRecords(records) {
+  return [...records].sort(compareTimelineRecordsNewestFirst);
+} // End of getNewestFirstRecords
+
+function compareTimelineRecordsNewestFirst(firstRecord, secondRecord) {
+  const firstSortOrder = Number(firstRecord.sort_order);
+  const secondSortOrder = Number(secondRecord.sort_order);
+
+  if (Number.isFinite(firstSortOrder) && Number.isFinite(secondSortOrder) && firstSortOrder !== secondSortOrder) {
+    return secondSortOrder - firstSortOrder;
+  }
+
+  return String(secondRecord.created_at || "").localeCompare(String(firstRecord.created_at || ""));
+} // End of compareTimelineRecordsNewestFirst
 
 function normalizeTimelineRecords(records) {
   const normalizedRecords = [];
@@ -273,6 +289,7 @@ function normalizeTimelineRecords(records) {
     const sourceRecord = records[index] || {};
     normalizedRecords.push({
       id: String(sourceRecord.id || `record-${index + 1}`),
+      created_at: String(sourceRecord.created_at || ""),
       event_date: String(sourceRecord.event_date || ""),
       badge_text: String(sourceRecord.badge_text || "기록"),
       badge_color: sanitizeBadgeColor(sourceRecord.badge_color),
