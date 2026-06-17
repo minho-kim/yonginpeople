@@ -1,9 +1,20 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2/+esm";
 import { TIMELINE_SUPABASE_CONFIG } from "./config.js";
 
 const TABLE_NAME = "timeline_history";
 const STORAGE_BUCKET = "event-images";
 const VALID_BADGE_COLORS = ["primary", "secondary", "success", "info", "dark", "warning"];
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
+const MAX_IMAGE_FILE_SIZE = 15 * 1024 * 1024;
+const IMAGE_TYPE_BY_EXTENSION = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  heic: "image/heic",
+  heif: "image/heif"
+};
 
 let supabaseClient = null;
 let records = [];
@@ -155,7 +166,7 @@ async function bootstrapAuthState() {
   supabaseClient.auth.onAuthStateChange(handleAuthStateChange);
 
   if (sessionResponse.data && sessionResponse.data.session) {
-    await showAuthenticatedState(sessionResponse.data.session.user);
+    await handleAuthenticatedSession(sessionResponse.data.session.user);
     return;
   }
 
@@ -164,7 +175,7 @@ async function bootstrapAuthState() {
 
 async function handleAuthStateChange(eventName, session) {
   if (eventName === "SIGNED_IN" && session && session.user) {
-    await showAuthenticatedState(session.user);
+    await handleAuthenticatedSession(session.user);
     return;
   }
 
@@ -172,6 +183,28 @@ async function handleAuthStateChange(eventName, session) {
     showUnauthenticatedState();
   }
 } // End of handleAuthStateChange
+
+async function handleAuthenticatedSession(user) {
+  const isAdmin = await checkCurrentUserIsAdmin();
+
+  if (!isAdmin) {
+    showUnauthorizedState(user);
+    return;
+  }
+
+  await showAuthenticatedState(user);
+} // End of handleAuthenticatedSession
+
+async function checkCurrentUserIsAdmin() {
+  const response = await supabaseClient.rpc("is_timeline_admin");
+
+  if (response.error) {
+    setStatus(response.error.message, "danger");
+    return false;
+  }
+
+  return response.data === true;
+} // End of checkCurrentUserIsAdmin
 
 async function handleLoginSubmit(event) {
   event.preventDefault();
@@ -225,6 +258,15 @@ function showUnauthenticatedState() {
   loginPassword.value = "";
   setStatus("관리자 계정으로 로그인하세요.", "neutral");
 } // End of showUnauthenticatedState
+
+function showUnauthorizedState(user) {
+  const email = user && user.email ? user.email : "현재 계정";
+  authSection.classList.remove("d-none");
+  adminSection.classList.add("d-none");
+  logoutButton.classList.remove("d-none");
+  loginPassword.value = "";
+  setStatus(`${email}은 관리자 목록에 없습니다.`, "danger");
+} // End of showUnauthorizedState
 
 async function loadRecords() {
   setListBusy(true);
@@ -485,8 +527,8 @@ async function handleUploadImageClick() {
     return;
   }
 
-  if (!file.type.startsWith("image/")) {
-    setStatus("이미지 파일만 업로드할 수 있습니다.", "danger");
+  if (!isAllowedImageFile(file)) {
+    setStatus("JPG, PNG, WebP, GIF, HEIC 형식의 15MB 이하 사진만 업로드할 수 있습니다.", "danger");
     return;
   }
 
@@ -510,6 +552,42 @@ async function handleUploadImageClick() {
 
   setStatus("사진 업로드가 완료되었습니다. 새 기록 저장을 누르면 화면에 반영됩니다.", "success");
 } // End of handleUploadImageClick
+
+function isAllowedImageFile(file) {
+  if (!file || !getAllowedImageType(file)) {
+    return false;
+  }
+
+  if (file.size > MAX_IMAGE_FILE_SIZE) {
+    return false;
+  }
+
+  return true;
+} // End of isAllowedImageFile
+
+function getAllowedImageType(file) {
+  if (!file) {
+    return "";
+  }
+
+  if (ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return file.type;
+  }
+
+  const extension = getFileExtension(file.name);
+  return IMAGE_TYPE_BY_EXTENSION[extension] || "";
+} // End of getAllowedImageType
+
+function getFileExtension(fileName) {
+  const normalizedName = String(fileName || "").trim().toLowerCase();
+  const segments = normalizedName.split(".");
+
+  if (segments.length < 2) {
+    return "";
+  }
+
+  return segments[segments.length - 1];
+} // End of getFileExtension
 
 async function saveCurrentRecordImageUrl(publicUrl) {
   const currentId = recordId.value.trim();
@@ -539,10 +617,12 @@ async function saveCurrentRecordImageUrl(publicUrl) {
 
 async function uploadImage(file) {
   const storagePath = buildStoragePath(file);
+  const contentType = getAllowedImageType(file);
   const uploadResponse = await supabaseClient.storage
     .from(STORAGE_BUCKET)
     .upload(storagePath, file, {
       cacheControl: "3600",
+      contentType: contentType,
       upsert: false
     });
 

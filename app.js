@@ -1,4 +1,4 @@
-import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm";
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2/+esm";
 import { TIMELINE_SUPABASE_CONFIG } from "./config.js";
 
 const VALID_BADGE_COLORS = ["primary", "secondary", "success", "info", "dark", "warning"];
