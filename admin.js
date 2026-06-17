@@ -26,7 +26,6 @@ let formTitle = null;
 let formSubtitle = null;
 let recordId = null;
 let eventDate = null;
-let sortOrder = null;
 let badgeColor = null;
 let badgeText = null;
 let eventTitle = null;
@@ -78,7 +77,6 @@ function cacheElements() {
   formSubtitle = document.getElementById("formSubtitle");
   recordId = document.getElementById("recordId");
   eventDate = document.getElementById("eventDate");
-  sortOrder = document.getElementById("sortOrder");
   badgeColor = document.getElementById("badgeColor");
   badgeText = document.getElementById("badgeText");
   eventTitle = document.getElementById("eventTitle");
@@ -233,7 +231,6 @@ async function loadRecords() {
   const response = await supabaseClient
     .from(TABLE_NAME)
     .select("*")
-    .order("sort_order", { ascending: false })
     .order("created_at", { ascending: false });
 
   setListBusy(false);
@@ -290,7 +287,7 @@ function createRecordButton(record) {
 
   const meta = document.createElement("div");
   meta.className = "record-meta";
-  meta.textContent = `${record.badge_text} · sort ${record.sort_order || "-"}`;
+  meta.textContent = record.badge_text;
 
   button.appendChild(date);
   button.appendChild(title);
@@ -332,8 +329,7 @@ function selectRecordById(nextRecordId) {
 
 function renderRecordForm(record) {
   recordId.value = record.id;
-  eventDate.value = record.event_date;
-  sortOrder.value = record.sort_order ? String(record.sort_order) : "";
+  eventDate.value = getDateInputValue(record.event_date);
   badgeColor.value = sanitizeBadgeColor(record.badge_color);
   badgeText.value = record.badge_text;
   eventTitle.value = record.title;
@@ -351,7 +347,6 @@ function resetFormForNewRecord() {
   selectedRecordId = "";
   recordId.value = "";
   eventDate.value = "";
-  sortOrder.value = String(getNextSortOrder());
   badgeColor.value = "primary";
   badgeText.value = "";
   eventTitle.value = "";
@@ -366,20 +361,6 @@ function resetFormForNewRecord() {
   renderRecordList(records);
   renderIcons();
 } // End of resetFormForNewRecord
-
-function getNextSortOrder() {
-  let maxSortOrder = 0;
-
-  for (let index = 0; index < records.length; index += 1) {
-    const currentSortOrder = Number(records[index].sort_order);
-
-    if (Number.isFinite(currentSortOrder) && currentSortOrder > maxSortOrder) {
-      maxSortOrder = currentSortOrder;
-    }
-  }
-
-  return maxSortOrder + 1;
-} // End of getNextSortOrder
 
 function handleNewRecordClick() {
   resetFormForNewRecord();
@@ -414,15 +395,13 @@ async function handleSaveSubmit(event) {
 } // End of handleSaveSubmit
 
 function buildPayloadFromForm() {
-  const parsedSortOrder = Number(sortOrder.value);
-
   if (!eventDate.value.trim() || !badgeText.value.trim() || !eventTitle.value.trim()) {
-    setStatus("일시, 배지, 제목은 필수입니다.", "danger");
+    setStatus("날짜, 배지, 제목은 필수입니다.", "danger");
     return null;
   }
 
   const payload = {
-    event_date: eventDate.value.trim(),
+    event_date: formatDateForStorage(eventDate.value),
     badge_text: badgeText.value.trim(),
     badge_color: sanitizeBadgeColor(badgeColor.value),
     title: eventTitle.value.trim(),
@@ -430,10 +409,6 @@ function buildPayloadFromForm() {
     image_url: imageUrl.value.trim() || null,
     articles: getArticlesFromForm()
   };
-
-  if (Number.isFinite(parsedSortOrder) && parsedSortOrder > 0) {
-    payload.sort_order = parsedSortOrder;
-  }
 
   return payload;
 } // End of buildPayloadFromForm
@@ -527,8 +502,40 @@ async function handleUploadImageClick() {
 
   imageUrl.value = publicUrl;
   updateImagePreview();
-  setStatus("사진 업로드가 완료되었습니다.", "success");
+
+  if (recordId.value.trim()) {
+    await saveCurrentRecordImageUrl(publicUrl);
+    return;
+  }
+
+  setStatus("사진 업로드가 완료되었습니다. 새 기록 저장을 누르면 화면에 반영됩니다.", "success");
 } // End of handleUploadImageClick
+
+async function saveCurrentRecordImageUrl(publicUrl) {
+  const currentId = recordId.value.trim();
+
+  if (!currentId) {
+    return;
+  }
+
+  const response = await supabaseClient
+    .from(TABLE_NAME)
+    .update({
+      image_url: publicUrl
+    })
+    .eq("id", currentId)
+    .select("*")
+    .single();
+
+  if (response.error) {
+    setStatus(response.error.message, "danger");
+    return;
+  }
+
+  setStatus("사진 업로드와 기록 반영이 완료되었습니다.", "success");
+  await loadRecords();
+  selectRecordById(currentId);
+} // End of saveCurrentRecordImageUrl
 
 async function uploadImage(file) {
   const storagePath = buildStoragePath(file);
@@ -705,8 +712,7 @@ function normalizeRecord(rawRecord, index) {
     title: String(sourceRecord.title || ""),
     description: String(sourceRecord.description || ""),
     image_url: String(sourceRecord.image_url || ""),
-    articles: normalizeArticles(sourceRecord.articles),
-    sort_order: Number.isFinite(Number(sourceRecord.sort_order)) ? Number(sourceRecord.sort_order) : 0
+    articles: normalizeArticles(sourceRecord.articles)
   };
 } // End of normalizeRecord
 
@@ -748,15 +754,70 @@ function getNewestFirstRecords(nextRecords) {
 } // End of getNewestFirstRecords
 
 function compareTimelineRecordsNewestFirst(firstRecord, secondRecord) {
-  const firstSortOrder = Number(firstRecord.sort_order);
-  const secondSortOrder = Number(secondRecord.sort_order);
+  const firstDateTime = getEventDateTime(firstRecord.event_date);
+  const secondDateTime = getEventDateTime(secondRecord.event_date);
 
-  if (Number.isFinite(firstSortOrder) && Number.isFinite(secondSortOrder) && firstSortOrder !== secondSortOrder) {
-    return secondSortOrder - firstSortOrder;
+  if (firstDateTime !== secondDateTime) {
+    return secondDateTime - firstDateTime;
   }
 
   return String(secondRecord.created_at || "").localeCompare(String(firstRecord.created_at || ""));
 } // End of compareTimelineRecordsNewestFirst
+
+function getDateInputValue(eventDateText) {
+  const parsedDate = parseEventDate(eventDateText);
+
+  if (!parsedDate) {
+    return "";
+  }
+
+  return `${String(parsedDate.year).padStart(4, "0")}-${String(parsedDate.month).padStart(2, "0")}-${String(parsedDate.day).padStart(2, "0")}`;
+} // End of getDateInputValue
+
+function formatDateForStorage(dateInputValue) {
+  const parsedDate = parseEventDate(dateInputValue);
+
+  if (!parsedDate) {
+    return "";
+  }
+
+  return `${parsedDate.year}년 ${parsedDate.month}월 ${parsedDate.day}일`;
+} // End of formatDateForStorage
+
+function getEventDateTime(eventDateText) {
+  const parsedDate = parseEventDate(eventDateText);
+
+  if (!parsedDate) {
+    return 0;
+  }
+
+  return Date.UTC(parsedDate.year, parsedDate.month - 1, parsedDate.day);
+} // End of getEventDateTime
+
+function parseEventDate(eventDateText) {
+  const normalizedText = String(eventDateText || "").trim();
+  const isoMatch = normalizedText.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+
+  if (isoMatch) {
+    return {
+      year: Number(isoMatch[1]),
+      month: Number(isoMatch[2]),
+      day: Number(isoMatch[3])
+    };
+  }
+
+  const koreanMatch = normalizedText.match(/(\d{4})\D+(\d{1,2})\D+(\d{1,2})/);
+
+  if (!koreanMatch) {
+    return null;
+  }
+
+  return {
+    year: Number(koreanMatch[1]),
+    month: Number(koreanMatch[2]),
+    day: Number(koreanMatch[3])
+  };
+} // End of parseEventDate
 
 function sanitizeBadgeColor(value) {
   const rawValue = String(value || "primary").trim();
