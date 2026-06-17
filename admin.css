@@ -212,84 +212,80 @@ body {
   box-shadow: 0 0 0 0.2rem rgba(181, 70, 48, 0.14);
 }
 
-.badge-color-native-select {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+.badge-color-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
 }
 
 .badge-color-picker {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-height: 38px;
 }
 
-.badge-color-option {
+.badge-color-radio-label {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  min-height: 38px;
-  padding: 7px 9px;
-  border: 1px solid var(--admin-line);
-  border-radius: 8px;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  border: 2px solid transparent;
+  border-radius: 999px;
   background: #ffffff;
-  color: var(--admin-ink);
   cursor: pointer;
-  font: inherit;
-  font-size: 0.84rem;
-  font-weight: 800;
-  line-height: 1.2;
-  text-align: left;
-  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-.badge-color-option:hover,
-.badge-color-option:focus {
+.badge-color-radio-label:hover,
+.badge-color-radio-label:focus-within {
   border-color: rgba(181, 70, 48, 0.5);
   box-shadow: 0 0 0 0.18rem rgba(181, 70, 48, 0.12);
   outline: none;
 }
 
-.badge-color-option.is-selected {
+.badge-color-radio-label.is-selected {
   border-color: var(--admin-primary);
-  background: #fff4ef;
-  box-shadow: inset 0 0 0 1px rgba(181, 70, 48, 0.24);
+  box-shadow: 0 0 0 0.18rem rgba(181, 70, 48, 0.16);
+  transform: translateY(-1px);
 }
 
 .badge-color-swatch {
   display: inline-block;
-  width: 16px;
-  min-width: 16px;
-  height: 16px;
-  margin-right: 7px;
+  width: 22px;
+  min-width: 22px;
+  height: 22px;
+  margin-right: 0;
   border: 1px solid rgba(37, 35, 31, 0.18);
   border-radius: 999px;
 }
 
 .badge-color-swatch.is-primary {
-  background: #0d6efd;
+  background: #b54630;
 }
 
 .badge-color-swatch.is-secondary {
-  background: #6c757d;
+  background: #7a7469;
 }
 
 .badge-color-swatch.is-success {
-  background: #198754;
+  background: #3f7a3e;
 }
 
 .badge-color-swatch.is-info {
-  background: #0dcaf0;
+  background: #2f7068;
 }
 
 .badge-color-swatch.is-dark {
-  background: #212529;
+  background: #2a2926;
 }
 
 .badge-color-swatch.is-warning {
-  background: #ffc107;
+  background: #e6b44f;
 }
 
 .btn-primary {

@@ -117,7 +117,7 @@ function bindEvents() {
   refreshButton.addEventListener("click", handleRefreshClick);
   timelineForm.addEventListener("submit", handleSaveSubmit);
   deleteButton.addEventListener("click", handleDeleteClick);
-  badgeColorPicker.addEventListener("click", handleBadgeColorPickerClick);
+  badgeColorPicker.addEventListener("change", handleBadgeColorPickerChange);
   badgeColor.addEventListener("change", handleBadgeColorChange);
   uploadImageButton.addEventListener("click", handleUploadImageClick);
   clearImageButton.addEventListener("click", handleClearImageClick);
@@ -490,16 +490,16 @@ function buildPayloadFromForm() {
   return payload;
 } // End of buildPayloadFromForm
 
-function handleBadgeColorPickerClick(event) {
-  const button = event.target.closest(".badge-color-option");
+function handleBadgeColorPickerChange(event) {
+  const radio = event.target.closest(".badge-color-radio");
 
-  if (!button) {
+  if (!radio) {
     return;
   }
 
-  setSelectedBadgeColor(button.dataset.badgeColor);
+  setSelectedBadgeColor(radio.value);
   saveFormDraft();
-} // End of handleBadgeColorPickerClick
+} // End of handleBadgeColorPickerChange
 
 function handleBadgeColorChange() {
   setSelectedBadgeColor(badgeColor.value);
@@ -512,13 +512,17 @@ function setSelectedBadgeColor(value) {
 } // End of setSelectedBadgeColor
 
 function updateSelectedBadgeColorControl(selectedColor) {
-  const buttons = Array.from(badgeColorPicker.querySelectorAll(".badge-color-option"));
+  const radios = Array.from(badgeColorPicker.querySelectorAll(".badge-color-radio"));
 
-  for (let index = 0; index < buttons.length; index += 1) {
-    const button = buttons[index];
-    const isSelected = button.dataset.badgeColor === selectedColor;
-    button.classList.toggle("is-selected", isSelected);
-    button.setAttribute("aria-pressed", isSelected ? "true" : "false");
+  for (let index = 0; index < radios.length; index += 1) {
+    const radio = radios[index];
+    const label = radio.closest(".badge-color-radio-label");
+    const isSelected = radio.value === selectedColor;
+    radio.checked = isSelected;
+
+    if (label) {
+      label.classList.toggle("is-selected", isSelected);
+    }
   }
 } // End of updateSelectedBadgeColorControl
 
@@ -1254,10 +1258,10 @@ function setFormBusy(isBusy) {
 } // End of setFormBusy
 
 function setBadgeColorPickerDisabled(isDisabled) {
-  const buttons = Array.from(badgeColorPicker.querySelectorAll(".badge-color-option"));
+  const radios = Array.from(badgeColorPicker.querySelectorAll(".badge-color-radio"));
 
-  for (let index = 0; index < buttons.length; index += 1) {
-    buttons[index].disabled = isDisabled;
+  for (let index = 0; index < radios.length; index += 1) {
+    radios[index].disabled = isDisabled;
   }
 } // End of setBadgeColorPickerDisabled
 
