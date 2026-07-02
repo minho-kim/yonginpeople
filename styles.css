@@ -161,6 +161,11 @@ a:hover {
   outline-offset: 3px;
 }
 
+.timeline-card.is-active {
+  border-color: var(--accent);
+  box-shadow: 0 24px 58px rgba(45, 38, 28, 0.18);
+}
+
 .timeline-item-left .timeline-card {
   text-align: right;
 }
@@ -252,6 +257,79 @@ a:hover {
   margin: 0;
   color: var(--muted);
   line-height: 1.7;
+}
+
+.timeline-detail-row {
+  position: relative;
+  z-index: 2;
+  margin-top: -2px;
+  margin-bottom: 30px;
+}
+
+.timeline-detail-panel {
+  overflow: hidden;
+  border: 1px solid rgba(34, 32, 28, 0.1);
+  border-radius: 8px;
+  background: #fffdf8;
+  box-shadow: 0 26px 62px rgba(45, 38, 28, 0.14);
+}
+
+.timeline-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 24px;
+  border-bottom: 1px solid rgba(34, 32, 28, 0.1);
+}
+
+.timeline-detail-title {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.38rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.timeline-detail-close {
+  position: relative;
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border: 1px solid rgba(34, 32, 28, 0.12);
+  border-radius: 999px;
+  background: #ffffff;
+}
+
+.timeline-detail-close::before,
+.timeline-detail-close::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 2px;
+  content: "";
+  background: var(--ink);
+  transform-origin: center;
+}
+
+.timeline-detail-close::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.timeline-detail-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.timeline-detail-close:hover,
+.timeline-detail-close:focus {
+  border-color: rgba(181, 70, 48, 0.4);
+  outline: 3px solid rgba(47, 112, 104, 0.18);
+  outline-offset: 2px;
+}
+
+.timeline-detail-body {
+  padding: 24px;
 }
 
 .modal-content {
@@ -425,6 +503,16 @@ a:hover {
     min-height: 128px;
     padding: 18px;
   }
+
+  .timeline-detail-row {
+    margin-top: -4px;
+    padding-left: 34px;
+  }
+
+  .timeline-detail-header,
+  .timeline-detail-body {
+    padding: 18px;
+  }
 }
 
 @media (max-width: 575.98px) {
@@ -442,6 +530,10 @@ a:hover {
 
   .timeline-title {
     font-size: 1.08rem;
+  }
+
+  .timeline-detail-title {
+    font-size: 1.16rem;
   }
 
   .modal-header {
