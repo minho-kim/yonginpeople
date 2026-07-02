@@ -144,6 +144,7 @@ let modalTitle = null;
 let modalDate = null;
 let modalBody = null;
 let fallbackBackdropElement = null;
+let activeDetailRecordId = "";
 
 document.addEventListener("DOMContentLoaded", initializeApp);
 
@@ -430,6 +431,7 @@ function renderLoadingState() {
 
 function renderTimeline(records) {
   timelineRoot.innerHTML = "";
+  activeDetailRecordId = "";
 
   if (!records.length) {
     renderEmptyState();
@@ -504,6 +506,7 @@ function createTimelineCard(record) {
   card.type = "button";
   card.className = "timeline-card";
   card.dataset.eventId = record.id;
+  card.setAttribute("aria-expanded", "false");
   card.timelineRecord = record;
   card.innerHTML = `
     <span class="badge text-bg-${safeBadgeColor}">${escapeHtml(record.badge_text)}</span>
@@ -515,13 +518,19 @@ function createTimelineCard(record) {
 } // End of createTimelineCard
 
 function handleTimelineRootClick(event) {
+  const closeButton = event.target.closest(".timeline-detail-close");
+  if (closeButton) {
+    closeInlineDetailPanel();
+    return;
+  }
+
   const card = event.target.closest(".timeline-card");
 
   if (!card) {
     return;
   }
 
-  openTimelineModal(card.timelineRecord);
+  toggleInlineDetailPanel(card.timelineRecord, card);
 } // End of handleTimelineRootClick
 
 function handleTimelineRootKeydown(event) {
@@ -532,7 +541,7 @@ function handleTimelineRootKeydown(event) {
   }
 
   event.preventDefault();
-  openTimelineModal(card.timelineRecord);
+  toggleInlineDetailPanel(card.timelineRecord, card);
 } // End of handleTimelineRootKeydown
 
 function openTimelineModal(record) {
@@ -549,6 +558,82 @@ function openTimelineModal(record) {
 
   showGlobalModal();
 } // End of openTimelineModal
+
+function toggleInlineDetailPanel(record, card) {
+  if (!record || !card) {
+    return;
+  }
+
+  if (activeDetailRecordId === record.id) {
+    closeInlineDetailPanel();
+    return;
+  }
+
+  closeInlineDetailPanel();
+  const timelineRow = card.closest(".timeline-row");
+
+  if (!timelineRow || !timelineRow.parentNode) {
+    return;
+  }
+
+  activeDetailRecordId = record.id;
+  card.classList.add("is-active");
+  card.setAttribute("aria-expanded", "true");
+
+  const detailRow = createInlineDetailRow(record);
+  timelineRow.insertAdjacentElement("afterend", detailRow);
+  scrollDetailPanelIntoView(detailRow);
+} // End of toggleInlineDetailPanel
+
+function closeInlineDetailPanel() {
+  const detailRow = timelineRoot.querySelector(".timeline-detail-row");
+  const activeCard = timelineRoot.querySelector(".timeline-card.is-active");
+
+  if (detailRow) {
+    detailRow.remove();
+  }
+
+  if (activeCard) {
+    activeCard.classList.remove("is-active");
+    activeCard.setAttribute("aria-expanded", "false");
+  }
+
+  activeDetailRecordId = "";
+} // End of closeInlineDetailPanel
+
+function createInlineDetailRow(record) {
+  const safeBadgeColor = sanitizeBadgeColor(record.badge_color);
+  const detailRow = document.createElement("div");
+  detailRow.className = "row timeline-detail-row";
+  detailRow.dataset.detailFor = record.id;
+  detailRow.innerHTML = `
+    <div class="col-12">
+      <article class="timeline-detail-panel" aria-label="${escapeHtml(record.title)} 상세 기록">
+        <header class="timeline-detail-header">
+          <div>
+            <span class="badge text-bg-${safeBadgeColor} mb-2">${escapeHtml(record.badge_text)}</span>
+            <h3 class="timeline-detail-title">${escapeHtml(record.title)}</h3>
+            <p class="modal-date mb-0">${escapeHtml(record.event_date)}</p>
+          </div>
+          <button class="timeline-detail-close" type="button" aria-label="상세 닫기"></button>
+        </header>
+        <div class="timeline-detail-body">${buildModalBodyHtml(record)}</div>
+      </article>
+    </div>
+  `;
+  return detailRow;
+} // End of createInlineDetailRow
+
+function scrollDetailPanelIntoView(detailRow) {
+  if (!detailRow || typeof detailRow.scrollIntoView !== "function") {
+    return;
+  }
+
+  detailRow.scrollIntoView({
+    behavior: "smooth",
+    block: "nearest"
+  });
+} // End of scrollDetailPanelIntoView
 
 function showGlobalModal() {
   if (isBootstrapModalAvailable()) {
@@ -574,7 +659,16 @@ function handleGlobalModalClick(event) {
 } // End of handleGlobalModalClick
 
 function handleDocumentKeydown(event) {
-  if (event.key !== "Escape" || isBootstrapModalAvailable()) {
+  if (event.key !== "Escape") {
+    return;
+  }
+
+  if (activeDetailRecordId) {
+    closeInlineDetailPanel();
+    return;
+  }
+
+  if (isBootstrapModalAvailable()) {
     return;
   }
 
