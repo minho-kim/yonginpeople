@@ -513,6 +513,7 @@ function createTimelineCard(record) {
     <div class="timeline-date mt-3">${escapeHtml(record.event_date)}</div>
     <h2 class="timeline-title">${escapeHtml(record.title)}</h2>
     <p class="timeline-description">${escapeHtml(getPreviewDescription(record))}</p>
+    <span class="timeline-card-action" aria-hidden="true"></span>
   `;
   return card;
 } // End of createTimelineCard
