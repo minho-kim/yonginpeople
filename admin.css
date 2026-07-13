@@ -366,6 +366,31 @@ body {
   line-height: 1;
 }
 
+.minutes-pdf-preview-wrap {
+  overflow: hidden;
+  border: 1px solid rgba(37, 35, 31, 0.1);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.minutes-pdf-preview {
+  display: block;
+  width: 100%;
+  height: 420px;
+  border: 0;
+  background: #ebe5db;
+}
+
+.minutes-pdf-preview-link {
+  display: block;
+  padding: 10px 12px;
+  border-top: 1px solid rgba(37, 35, 31, 0.1);
+  color: var(--admin-primary);
+  font-size: 0.9rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
 .article-header {
   display: flex;
   align-items: center;

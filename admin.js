@@ -3,10 +3,13 @@ import { TIMELINE_SUPABASE_CONFIG } from "./config.js";
 
 const TABLE_NAME = "timeline_history";
 const STORAGE_BUCKET = "event-images";
+const DOCUMENTS_BUCKET = "event-documents";
 const DRAFT_STORAGE_KEY = "yonginTimelineAdminDraft";
 const VALID_BADGE_COLORS = ["primary", "secondary", "success", "info", "dark", "warning"];
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif", "image/heic", "image/heif"];
 const MAX_IMAGE_FILE_SIZE = 15 * 1024 * 1024;
+const ALLOWED_PDF_TYPES = ["application/pdf"];
+const MAX_PDF_FILE_SIZE = 30 * 1024 * 1024;
 const IMAGE_TYPE_BY_EXTENSION = {
   jpg: "image/jpeg",
   jpeg: "image/jpeg",
@@ -50,6 +53,13 @@ let clearImageButton = null;
 let imagePreviewWrap = null;
 let imagePreview = null;
 let imageSlider = null;
+let minutesPdfUrl = null;
+let minutesPdfFile = null;
+let uploadMinutesPdfButton = null;
+let clearMinutesPdfButton = null;
+let minutesPdfPreviewWrap = null;
+let minutesPdfPreview = null;
+let minutesPdfPreviewLink = null;
 let articleRows = null;
 let addArticleButton = null;
 let saveButton = null;
@@ -103,6 +113,13 @@ function cacheElements() {
   imagePreviewWrap = document.getElementById("imagePreviewWrap");
   imagePreview = document.getElementById("imagePreview");
   imageSlider = document.getElementById("imageSlider");
+  minutesPdfUrl = document.getElementById("minutesPdfUrl");
+  minutesPdfFile = document.getElementById("minutesPdfFile");
+  uploadMinutesPdfButton = document.getElementById("uploadMinutesPdfButton");
+  clearMinutesPdfButton = document.getElementById("clearMinutesPdfButton");
+  minutesPdfPreviewWrap = document.getElementById("minutesPdfPreviewWrap");
+  minutesPdfPreview = document.getElementById("minutesPdfPreview");
+  minutesPdfPreviewLink = document.getElementById("minutesPdfPreviewLink");
   articleRows = document.getElementById("articleRows");
   addArticleButton = document.getElementById("addArticleButton");
   saveButton = document.getElementById("saveButton");
@@ -122,6 +139,9 @@ function bindEvents() {
   clearImageButton.addEventListener("click", handleClearImageClick);
   imageUrl.addEventListener("input", handleImageUrlInput);
   imageSlider.addEventListener("click", handleImageSliderClick);
+  uploadMinutesPdfButton.addEventListener("click", handleUploadMinutesPdfClick);
+  clearMinutesPdfButton.addEventListener("click", handleClearMinutesPdfClick);
+  minutesPdfUrl.addEventListener("input", handleMinutesPdfUrlInput);
   addArticleButton.addEventListener("click", handleAddArticleClick);
   articleRows.addEventListener("click", handleArticleRowsClick);
   timelineForm.addEventListener("input", handleTimelineFormInput);
@@ -396,11 +416,13 @@ function renderRecordForm(record) {
   eventTitle.value = record.title;
   description.value = record.description;
   imageUrl.value = serializeImageUrls(record.image_urls);
+  minutesPdfUrl.value = record.minutes_pdf_url;
   formTitle.textContent = "기록 수정";
   formSubtitle.textContent = record.title;
   deleteButton.classList.remove("d-none");
   renderArticleRows(record.articles);
   updateImagePreview();
+  updateMinutesPdfPreview();
   renderIcons();
 } // End of renderRecordForm
 
@@ -414,11 +436,14 @@ function resetFormForNewRecord() {
   description.value = "";
   imageUrl.value = "";
   imageFile.value = "";
+  minutesPdfUrl.value = "";
+  minutesPdfFile.value = "";
   formTitle.textContent = "새 기록";
   formSubtitle.textContent = "저장 전";
   deleteButton.classList.add("d-none");
   renderArticleRows([]);
   updateImagePreview();
+  updateMinutesPdfPreview();
   renderRecordList(records);
   renderIcons();
 } // End of resetFormForNewRecord
@@ -476,6 +501,14 @@ function buildPayloadFromForm() {
   }
 
   const imageUrls = getImageUrlsFromImageUrlInput();
+  const rawMinutesPdfUrlValue = minutesPdfUrl.value.trim();
+  const minutesPdfUrlValue = normalizePublicUrl(rawMinutesPdfUrlValue);
+
+  if (rawMinutesPdfUrlValue && !minutesPdfUrlValue) {
+    setStatus("회의록 PDF URL은 http 또는 https 주소로 입력해 주세요.", "danger");
+    return null;
+  }
+
   const payload = {
     event_date: formatDateForStorage(eventDate.value),
     badge_text: badgeText.value.trim(),
@@ -483,6 +516,7 @@ function buildPayloadFromForm() {
     title: eventTitle.value.trim(),
     description: description.value.trim() || null,
     image_url: serializeImageUrls(imageUrls) || null,
+    minutes_pdf_url: minutesPdfUrlValue || null,
     articles: articleResult.articles
   };
 
@@ -570,6 +604,28 @@ function normalizeArticleUrl(value) {
   return "";
 } // End of normalizeArticleUrl
 
+function normalizePublicUrl(value) {
+  const rawValue = String(value || "").trim();
+
+  if (!rawValue) {
+    return "";
+  }
+
+  const candidateUrl = /^[a-z][a-z\d+.-]*:/i.test(rawValue) ? rawValue : `https://${rawValue}`;
+
+  try {
+    const parsedUrl = new URL(candidateUrl);
+
+    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
+      return parsedUrl.href;
+    }
+  } catch (error) {
+    console.warn("Invalid public URL skipped:", error);
+  }
+
+  return "";
+} // End of normalizePublicUrl
+
 function getImageUrlsFromImageUrlInput() {
   return normalizeImageUrls(imageUrl.value);
 } // End of getImageUrlsFromImageUrlInput
@@ -618,23 +674,7 @@ function parseImageUrlValue(value) {
 } // End of parseImageUrlValue
 
 function normalizeImageUrl(value) {
-  const rawValue = String(value || "").trim();
-
-  if (!rawValue) {
-    return "";
-  }
-
-  try {
-    const parsedUrl = new URL(rawValue);
-
-    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
-      return parsedUrl.href;
-    }
-  } catch (error) {
-    console.warn("Invalid image URL skipped:", error);
-  }
-
-  return "";
+  return normalizePublicUrl(value);
 } // End of normalizeImageUrl
 
 function serializeImageUrls(imageUrls) {
@@ -989,6 +1029,153 @@ function removeImageUrlAtIndex(index) {
   saveFormDraft();
 } // End of removeImageUrlAtIndex
 
+async function handleUploadMinutesPdfClick() {
+  const file = minutesPdfFile.files && minutesPdfFile.files.length ? minutesPdfFile.files[0] : null;
+
+  if (!file) {
+    setStatus("업로드할 회의록 PDF를 선택하세요.", "danger");
+    return;
+  }
+
+  if (!isAllowedPdfFile(file)) {
+    setStatus("30MB 이하의 PDF 파일만 업로드할 수 있습니다.", "danger");
+    return;
+  }
+
+  uploadMinutesPdfButton.disabled = true;
+  setStatus("회의록 PDF를 업로드하는 중입니다.", "neutral");
+
+  const publicUrl = await uploadMinutesPdf(file);
+  uploadMinutesPdfButton.disabled = false;
+
+  if (!publicUrl) {
+    return;
+  }
+
+  minutesPdfUrl.value = publicUrl;
+  minutesPdfFile.value = "";
+  updateMinutesPdfPreview();
+  saveFormDraft();
+
+  if (recordId.value.trim()) {
+    await saveCurrentRecordMinutesPdfUrl(publicUrl);
+    return;
+  }
+
+  setStatus("회의록 PDF 업로드가 완료되었습니다. 새 기록 저장을 누르면 화면에 반영됩니다.", "success");
+} // End of handleUploadMinutesPdfClick
+
+function isAllowedPdfFile(file) {
+  if (!file) {
+    return false;
+  }
+
+  const extension = getFileExtension(file.name);
+  const hasPdfType = ALLOWED_PDF_TYPES.includes(file.type);
+  const hasPdfExtension = extension === "pdf";
+
+  if (!hasPdfType && !hasPdfExtension) {
+    return false;
+  }
+
+  if (file.size > MAX_PDF_FILE_SIZE) {
+    return false;
+  }
+
+  return true;
+} // End of isAllowedPdfFile
+
+async function uploadMinutesPdf(file) {
+  const storagePath = buildDocumentStoragePath(file);
+  const uploadResponse = await supabaseClient.storage
+    .from(DOCUMENTS_BUCKET)
+    .upload(storagePath, file, {
+      cacheControl: "3600",
+      contentType: "application/pdf",
+      upsert: false
+    });
+
+  if (uploadResponse.error) {
+    setStatus(uploadResponse.error.message, "danger");
+    return "";
+  }
+
+  const publicUrlResponse = supabaseClient.storage.from(DOCUMENTS_BUCKET).getPublicUrl(storagePath);
+  return publicUrlResponse.data && publicUrlResponse.data.publicUrl ? publicUrlResponse.data.publicUrl : "";
+} // End of uploadMinutesPdf
+
+function buildDocumentStoragePath(file) {
+  const now = new Date();
+  const year = String(now.getFullYear());
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const randomSegment = getRandomSegment();
+  const fileName = sanitizeFileSegment(file.name || "minutes.pdf");
+  return `timeline-minutes/${year}/${month}/${Date.now()}-${randomSegment}-${fileName}`;
+} // End of buildDocumentStoragePath
+
+async function saveCurrentRecordMinutesPdfUrl(publicUrl) {
+  const currentId = recordId.value.trim();
+
+  if (!currentId) {
+    return;
+  }
+
+  const normalizedUrl = normalizePublicUrl(publicUrl);
+  const response = await supabaseClient
+    .from(TABLE_NAME)
+    .update({
+      minutes_pdf_url: normalizedUrl || null
+    })
+    .eq("id", currentId)
+    .select("*")
+    .single();
+
+  if (response.error) {
+    setStatus(response.error.message, "danger");
+    return;
+  }
+
+  setStatus("회의록 PDF 업로드와 기록 반영이 완료되었습니다.", "success");
+  updateRecordMinutesPdfUrl(currentId, normalizedUrl);
+  renderRecordList(records);
+} // End of saveCurrentRecordMinutesPdfUrl
+
+function updateRecordMinutesPdfUrl(currentId, nextUrl) {
+  for (let index = 0; index < records.length; index += 1) {
+    if (records[index].id === currentId) {
+      records[index].minutes_pdf_url = normalizePublicUrl(nextUrl);
+      break;
+    }
+  }
+} // End of updateRecordMinutesPdfUrl
+
+function handleClearMinutesPdfClick() {
+  minutesPdfUrl.value = "";
+  minutesPdfFile.value = "";
+  updateMinutesPdfPreview();
+  saveFormDraft();
+} // End of handleClearMinutesPdfClick
+
+function handleMinutesPdfUrlInput() {
+  updateMinutesPdfPreview();
+  saveFormDraft();
+} // End of handleMinutesPdfUrlInput
+
+function updateMinutesPdfPreview() {
+  const value = normalizePublicUrl(minutesPdfUrl.value);
+
+  if (!value) {
+    minutesPdfPreview.removeAttribute("src");
+    minutesPdfPreviewLink.removeAttribute("href");
+    minutesPdfPreviewWrap.classList.add("d-none");
+    return;
+  }
+
+  minutesPdfPreview.src = value;
+  minutesPdfPreviewLink.href = value;
+  minutesPdfPreviewWrap.classList.remove("d-none");
+} // End of updateMinutesPdfPreview
+
 function handleAddArticleClick() {
   appendArticleRow({
     title: "",
@@ -1055,7 +1242,7 @@ function handleArticleRowsClick(event) {
 } // End of handleArticleRowsClick
 
 function handleTimelineFormInput(event) {
-  if (event.target === imageFile) {
+  if (event.target === imageFile || event.target === minutesPdfFile) {
     return;
   }
 
@@ -1077,6 +1264,7 @@ function saveFormDraft() {
     title: eventTitle.value,
     description: description.value,
     image_url: imageUrl.value,
+    minutes_pdf_url: minutesPdfUrl.value,
     articles: getArticleDraftsFromForm()
   };
 
@@ -1116,8 +1304,10 @@ function restoreFormDraft() {
   eventTitle.value = typeof draft.title === "string" ? draft.title : "";
   description.value = typeof draft.description === "string" ? draft.description : "";
   imageUrl.value = typeof draft.image_url === "string" ? draft.image_url : "";
+  minutesPdfUrl.value = typeof draft.minutes_pdf_url === "string" ? draft.minutes_pdf_url : "";
   renderArticleRows(Array.isArray(draft.articles) ? draft.articles : []);
   updateImagePreview();
+  updateMinutesPdfPreview();
   renderRecordList(records);
   renderIcons();
   setStatus("작성 중이던 내용을 복원했습니다.", "neutral");
@@ -1173,7 +1363,7 @@ function isMeaningfulDraft(draft) {
     return false;
   }
 
-  if (draft.record_id || draft.event_date || draft.badge_text || draft.title || draft.description || draft.image_url) {
+  if (draft.record_id || draft.event_date || draft.badge_text || draft.title || draft.description || draft.image_url || draft.minutes_pdf_url) {
     return true;
   }
 
@@ -1232,6 +1422,7 @@ function setFormBusy(isBusy) {
   saveButton.disabled = isBusy;
   deleteButton.disabled = isBusy;
   uploadImageButton.disabled = isBusy;
+  uploadMinutesPdfButton.disabled = isBusy;
   setBadgeColorSelectDisabled(isBusy);
 } // End of setFormBusy
 
@@ -1268,6 +1459,7 @@ function normalizeRecord(rawRecord, index) {
     description: String(sourceRecord.description || ""),
     image_url: serializeImageUrls(imageUrls),
     image_urls: imageUrls,
+    minutes_pdf_url: normalizePublicUrl(sourceRecord.minutes_pdf_url),
     articles: normalizeArticles(sourceRecord.articles)
   };
 } // End of normalizeRecord

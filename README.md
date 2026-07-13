@@ -4,22 +4,24 @@ Supabase Dashboard에서 `timeline_history` 데이터를 관리하면 원페이�
 
 ## 파일 구성
 
-- `index.html`: Bootstrap 5.3.2 CDN, 공용 모달, Supabase 설정 객체
+- `index.html`: Bootstrap 5.3.2 CDN, 공용 모달, 공개 타임라인 화면
 - `admin.html`: Supabase Auth 로그인 기반 히스토리 관리자
 - `config.js`: 공개 페이지와 관리자 페이지가 함께 쓰는 Supabase URL/key 설정
 - `styles.css`: 반응형 지그재그 타임라인 UI
 - `app.js`: Supabase 조회, realtime 구독, 이벤트 위임, 모달 바인딩
-- `admin.js`: 기록 생성/수정/삭제, Storage 사진 업로드, 기사 링크 관리
+- `admin.js`: 기록 생성/수정/삭제, Storage 사진/PDF 업로드, 기사 링크 관리
 - `admin.css`: 관리자 화면 전용 스타일
 - `supabase/schema-and-seed.sql`: 테이블, RLS 정책, Storage 버킷, 2026년 초기 데이터
 
 ## Supabase 설정
 
-1. Supabase SQL Editor에서 `supabase/schema-and-seed.sql`을 실행합니다.
-2. SQL 파일은 `timeline_history` 테이블을 Supabase Realtime publication에도 등록합니다.
-3. Storage의 `event-images` 버킷에 행사 이미지를 업로드합니다.
-4. `timeline_history.image_url`에는 이미지 Public URL을 넣습니다.
-5. `timeline_history.articles`에는 아래 형태의 JSON 배열을 넣습니다.
+1. Supabase Auth에서 관리자 사용자를 생성합니다.
+2. Supabase SQL Editor에서 `supabase/schema-and-seed.sql`을 실행합니다.
+3. SQL 파일은 현재 Auth 사용자들을 `admin_users` allowlist에 넣고, `timeline_history` 테이블을 Supabase Realtime publication에도 등록합니다.
+4. Storage의 `event-images` 버킷에는 행사 이미지를, `event-documents` 버킷에는 회의록 PDF를 업로드합니다.
+5. `timeline_history.image_url`에는 이미지 Public URL을 넣습니다. 사진이 여러 장이면 URL을 한 줄에 하나씩 넣습니다.
+6. `timeline_history.minutes_pdf_url`에는 회의록 PDF Public URL을 넣습니다.
+7. `timeline_history.articles`에는 아래 형태의 JSON 배열을 넣습니다.
 
 ```json
 [
@@ -30,8 +32,7 @@ Supabase Dashboard에서 `timeline_history` 데이터를 관리하면 원페이�
 ]
 ```
 
-6. Supabase Auth에서 관리자 사용자를 생성합니다.
-7. `config.js`의 설정값을 실제 프로젝트 값으로 교체합니다.
+8. `config.js`의 설정값을 실제 프로젝트 값으로 교체합니다.
 
 ```js
 export const TIMELINE_SUPABASE_CONFIG = {
@@ -48,7 +49,20 @@ export const TIMELINE_SUPABASE_CONFIG = {
 http://localhost:4173/admin.html
 ```
 
-관리자 페이지에서는 Supabase Auth 계정으로 로그인한 뒤 `timeline_history` 기록을 생성, 수정, 삭제할 수 있습니다. 날짜는 달력으로 선택하며, 공개 화면은 날짜 기준 최신순으로 자동 정렬합니다. 사진 업로드는 `event-images` 버킷에 저장하고, 기존 기록을 수정 중이면 Public URL을 `image_url` 필드에 즉시 반영합니다.
+관리자 페이지에서는 Supabase Auth 계정 중 `admin_users`에 등록된 사용자만 `timeline_history` 기록을 생성, 수정, 삭제할 수 있습니다. 날짜는 달력으로 선택하며, 공개 화면은 날짜 기준 최신순으로 자동 정렬합니다. 사진 업로드는 `event-images` 버킷에 저장하고, 여러 장을 한 번에 업로드할 수 있습니다. 업로드된 Public URL은 `image_url` 필드에 줄바꿈 목록으로 반영합니다. 회의록 PDF는 `event-documents` 버킷에 저장하고, 공개 상세 패널에서 바로 볼 수 있는 PDF 뷰어로 표시합니다.
+
+관리자 폼은 작성 중인 내용을 브라우저에 임시저장합니다. 저장 전 페이지를 벗어나거나 새로고침해도 다시 관리자 화면에 들어오면 입력 중이던 값이 복원됩니다.
+
+새 관리자 계정을 나중에 추가했다면 Supabase Dashboard에서 Auth 사용자를 만든 뒤 `admin_users` 테이블에도 해당 `user_id`를 추가해야 합니다. 현재 SQL은 실행 시점에 이미 존재하는 Auth 사용자들을 자동 등록합니다.
+
+## 보안 및 배포 메모
+
+- 프론트엔드에는 Publishable key 또는 legacy anon public key만 둡니다. `service_role`, `secret`, `sb_secret_...` 키는 절대 넣지 않습니다.
+- 공개 읽기는 유지하되, DB 쓰기와 Storage 업로드/수정/삭제는 `admin_users` allowlist 관리자에게만 허용합니다.
+- `event-images` 업로드는 JPG, PNG, WebP, GIF, HEIC/HEIF 형식의 15MB 이하 파일로 제한합니다.
+- `event-documents` 업로드는 PDF 형식의 30MB 이하 파일로 제한합니다.
+- Bootstrap/Lucide CDN은 고정 버전과 SRI 무결성 값을 사용합니다. Supabase SDK도 현재 동작 확인한 `2.108.2`로 고정했습니다.
+- 실제 배포 시 공개 웹 루트에는 `index.html`, `admin.html`, `app.js`, `admin.js`, `config.js`, `styles.css`, `admin.css`만 올리고 `README.md`, `WORK_HISTORY.md`, `supabase/` 같은 내부 작업 파일은 제외합니다.
 
 ## 로컬 실행
 

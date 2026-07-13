@@ -321,6 +321,7 @@ function normalizeTimelineRecords(records) {
       description: String(sourceRecord.description || ""),
       image_url: serializeImageUrls(imageUrls),
       image_urls: imageUrls,
+      minutes_pdf_url: sanitizeHttpUrl(sourceRecord.minutes_pdf_url),
       articles: normalizeArticles(sourceRecord.articles)
     });
   }
@@ -726,8 +727,9 @@ function isBootstrapModalAvailable() {
 function buildModalBodyHtml(record) {
   const imageHtml = buildImageHtml(record);
   const descriptionHtml = buildDescriptionHtml(record);
+  const minutesPdfHtml = buildMinutesPdfHtml(record);
   const articlesHtml = buildArticlesHtml(record);
-  return `${imageHtml}${descriptionHtml}${articlesHtml}`;
+  return `${imageHtml}${descriptionHtml}${minutesPdfHtml}${articlesHtml}`;
 } // End of buildModalBodyHtml
 
 function buildImageHtml(record) {
@@ -769,6 +771,24 @@ function buildDescriptionHtml(record) {
     <div class="modal-description mb-4">${escapeHtml(description)}</div>
   `;
 } // End of buildDescriptionHtml
+
+function buildMinutesPdfHtml(record) {
+  const minutesPdfUrl = sanitizeHttpUrl(record.minutes_pdf_url);
+
+  if (!minutesPdfUrl) {
+    return "";
+  }
+
+  return `
+    <section class="minutes-viewer mb-4" aria-label="회의록 PDF">
+      <div class="minutes-viewer-header">
+        <h4>회의록 PDF</h4>
+        <a href="${escapeHtml(minutesPdfUrl)}" target="_blank" rel="noopener noreferrer">새 창으로 열기</a>
+      </div>
+      <iframe class="minutes-viewer-frame" src="${escapeHtml(minutesPdfUrl)}" title="${escapeHtml(record.title)} 회의록 PDF"></iframe>
+    </section>
+  `;
+} // End of buildMinutesPdfHtml
 
 function buildArticlesHtml(record) {
   if (!record.articles.length) {
