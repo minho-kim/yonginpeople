@@ -783,9 +783,9 @@ function buildMinutesPdfHtml(record) {
     <section class="minutes-viewer mb-4" aria-label="회의록 PDF">
       <div class="minutes-viewer-header">
         <h4>회의록 PDF</h4>
-        <a href="${escapeHtml(minutesPdfUrl)}" target="_blank" rel="noopener noreferrer">새 창으로 열기</a>
+        <a href="${escapeHtml(minutesPdfUrl)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">새 창으로 열기</a>
       </div>
-      <iframe class="minutes-viewer-frame" src="${escapeHtml(minutesPdfUrl)}" title="${escapeHtml(record.title)} 회의록 PDF"></iframe>
+      <iframe class="minutes-viewer-frame" src="${escapeHtml(minutesPdfUrl)}" title="${escapeHtml(record.title)} 회의록 PDF" referrerpolicy="no-referrer"></iframe>
     </section>
   `;
 } // End of buildMinutesPdfHtml
@@ -801,7 +801,7 @@ function buildArticlesHtml(record) {
     const article = record.articles[index];
     articleItemsHtml += `
       <li>
-        <a class="article-link" href="${escapeHtml(article.url)}" target="_blank" rel="noopener noreferrer">
+        <a class="article-link" href="${escapeHtml(article.url)}" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer">
           <span>${escapeHtml(article.title)}</span>
           <span aria-hidden="true">열기</span>
         </a>
