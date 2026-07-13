@@ -49,7 +49,7 @@ export const TIMELINE_SUPABASE_CONFIG = {
 http://localhost:4173/admin.html
 ```
 
-관리자 페이지에서는 Supabase Auth 계정 중 `admin_users`에 등록된 사용자만 `timeline_history` 기록을 생성, 수정, 삭제할 수 있습니다. 날짜는 달력으로 선택하며, 공개 화면은 날짜 기준 최신순으로 자동 정렬합니다. 사진 업로드는 `event-images` 버킷에 저장하고, 여러 장을 한 번에 업로드할 수 있습니다. 업로드된 Public URL은 `image_url` 필드에 줄바꿈 목록으로 반영합니다. 회의록 PDF는 `event-documents` 버킷에 저장하고, 공개 상세 패널에서 바로 볼 수 있는 PDF 뷰어로 표시합니다.
+관리자 페이지에서는 Supabase Auth 계정 중 `admin_users`에 등록된 사용자만 `timeline_history` 기록을 생성, 수정, 삭제할 수 있습니다. 관리자 여부는 로그인한 사용자의 `admin_users` 본인 행 조회로 확인합니다. 날짜는 달력으로 선택하며, 공개 화면은 날짜 기준 최신순으로 자동 정렬합니다. 사진 업로드는 `event-images` 버킷에 저장하고, 여러 장을 한 번에 업로드할 수 있습니다. 업로드된 Public URL은 `image_url` 필드에 줄바꿈 목록으로 반영합니다. 회의록 PDF는 `event-documents` 버킷에 저장하고, 공개 상세 패널에서 바로 볼 수 있는 PDF 뷰어로 표시합니다.
 
 관리자 폼은 작성 중인 내용을 브라우저에 임시저장합니다. 저장 전 페이지를 벗어나거나 새로고침해도 다시 관리자 화면에 들어오면 입력 중이던 값이 복원됩니다.
 
@@ -58,9 +58,11 @@ http://localhost:4173/admin.html
 ## 보안 및 배포 메모
 
 - 프론트엔드에는 Publishable key 또는 legacy anon public key만 둡니다. `service_role`, `secret`, `sb_secret_...` 키는 절대 넣지 않습니다.
-- 공개 읽기는 유지하되, DB 쓰기와 Storage 업로드/수정/삭제는 `admin_users` allowlist 관리자에게만 허용합니다.
+- 공개 타임라인 읽기는 유지하되, DB 쓰기와 Storage 업로드/수정/삭제는 `admin_users` allowlist 관리자에게만 허용합니다.
+- Storage 버킷은 public URL 표시를 유지하지만, `storage.objects`의 public 목록 조회 정책은 두지 않습니다.
 - `event-images` 업로드는 JPG, PNG, WebP, GIF, HEIC/HEIF 형식의 15MB 이하 파일로 제한합니다.
 - `event-documents` 업로드는 PDF 형식의 30MB 이하 파일로 제한합니다.
+- Supabase Auth의 유출 비밀번호 보호는 Dashboard의 Auth 설정에서 별도로 켜는 것을 권장합니다.
 - Bootstrap/Lucide CDN은 고정 버전과 SRI 무결성 값을 사용합니다. Supabase SDK도 현재 동작 확인한 `2.108.2`로 고정했습니다.
 - 실제 배포 시 공개 웹 루트에는 `index.html`, `admin.html`, `app.js`, `admin.js`, `config.js`, `styles.css`, `admin.css`만 올리고 `README.md`, `WORK_HISTORY.md`, `supabase/` 같은 내부 작업 파일은 제외합니다.
 

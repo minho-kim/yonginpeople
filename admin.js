@@ -214,7 +214,7 @@ async function handleAuthStateChange(eventName, session) {
 } // End of handleAuthStateChange
 
 async function handleAuthenticatedSession(user) {
-  const isAdmin = await checkCurrentUserIsAdmin();
+  const isAdmin = await checkCurrentUserIsAdmin(user);
 
   if (!isAdmin) {
     showUnauthorizedState(user);
@@ -224,15 +224,25 @@ async function handleAuthenticatedSession(user) {
   await showAuthenticatedState(user);
 } // End of handleAuthenticatedSession
 
-async function checkCurrentUserIsAdmin() {
-  const response = await supabaseClient.rpc("is_timeline_admin");
+async function checkCurrentUserIsAdmin(user) {
+  const userId = user && user.id ? String(user.id) : "";
+
+  if (!userId) {
+    return false;
+  }
+
+  const response = await supabaseClient
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
 
   if (response.error) {
     setStatus(response.error.message, "danger");
     return false;
   }
 
-  return response.data === true;
+  return Boolean(response.data && response.data.user_id);
 } // End of checkCurrentUserIsAdmin
 
 async function handleLoginSubmit(event) {

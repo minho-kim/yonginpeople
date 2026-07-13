@@ -155,3 +155,13 @@
 - 기존 기록에서 PDF를 업로드하면 `minutes_pdf_url`이 즉시 DB에 반영되도록 했다.
 - 새 기록에서 PDF를 업로드하면 URL을 폼에 보관하고, 저장 시 `timeline_history.minutes_pdf_url`로 함께 저장되도록 했다.
 - 공개 상세 패널은 사진, 상세 설명, 회의록 PDF 뷰어, 관련 기사 순서로 표시되도록 변경했다.
+
+## 2026-07-13 Supabase Advisor 경고 처리
+
+- Supabase security advisor에서 public Storage 버킷의 broad SELECT 정책과 `public.is_timeline_admin()` RPC 실행 권한 경고를 확인했다.
+- `event-images`, `event-documents`의 public URL 접근은 유지하되, `storage.objects`의 public 목록 조회 정책은 제거했다.
+- 관리자 권한 판단을 `public.is_timeline_admin()` 직접 호출에서 `admin_users` 본인 행 조회 방식으로 변경했다.
+- `timeline_history`와 Storage 쓰기 정책은 `admin_users`에 현재 로그인 사용자의 행이 존재하는지 확인하도록 재작성했다.
+- `public.is_timeline_admin()` 함수는 더 이상 사용하지 않도록 제거했다.
+- Supabase performance advisor가 지적한 RLS `auth.uid()` 호출은 `(select auth.uid())` 형태로 바꿔 initplan 경고를 제거했다.
+- 재점검 결과 performance advisor는 0건이고, security advisor에는 Supabase Dashboard에서 켜야 하는 `Leaked Password Protection Disabled` 경고만 남았다.
