@@ -7,24 +7,8 @@
   background: #716b61;
 }
 
-.agenda-record-status.is-proposed {
-  background: #716b61;
-}
-
-.agenda-record-status.is-recruiting {
-  background: #a66b13;
-}
-
 .agenda-record-status.is-discussing {
   background: #b54630;
-}
-
-.agenda-record-status.is-shared {
-  background: #2f7068;
-}
-
-.agenda-record-status.is-completed {
-  background: #3f7a3e;
 }
 
 .agenda-record-status.is-dropped {
@@ -38,11 +22,6 @@
   color: var(--admin-muted);
   font-size: 0.82rem;
   line-height: 1.3;
-}
-
-.participant-count-preview.is-ready {
-  background: #dff2eb;
-  color: #23574f;
 }
 
 .form-note {

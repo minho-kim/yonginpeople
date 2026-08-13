@@ -1,9 +1,5 @@
 :root {
-  --agenda-proposed: #716b61;
-  --agenda-recruiting: #a66b13;
   --agenda-discussing: #b54630;
-  --agenda-shared: #2f7068;
-  --agenda-completed: #3f7a3e;
   --agenda-dropped: #343330;
 }
 
@@ -184,31 +180,15 @@
   flex-direction: column;
   padding: 20px;
   border: 1px solid rgba(34, 32, 28, 0.11);
-  border-top: 5px solid var(--agenda-proposed);
+  border-top: 5px solid var(--agenda-discussing);
   border-radius: 8px;
   background: var(--panel);
   box-shadow: 0 14px 34px rgba(45, 38, 28, 0.09);
   color: inherit;
 }
 
-.agenda-card.is-proposed {
-  border-top-color: var(--agenda-proposed);
-}
-
-.agenda-card.is-recruiting {
-  border-top-color: var(--agenda-recruiting);
-}
-
 .agenda-card.is-discussing {
   border-top-color: var(--agenda-discussing);
-}
-
-.agenda-card.is-shared {
-  border-top-color: var(--agenda-shared);
-}
-
-.agenda-card.is-completed {
-  border-top-color: var(--agenda-completed);
 }
 
 .agenda-card.is-dropped {
@@ -248,29 +228,9 @@
   height: 14px;
 }
 
-.agenda-card.is-proposed .agenda-status-badge {
-  background: #e8e5df;
-  color: #57524b;
-}
-
-.agenda-card.is-recruiting .agenda-status-badge {
-  background: #fff0d5;
-  color: #76501a;
-}
-
 .agenda-card.is-discussing .agenda-status-badge {
   background: #f9e2dc;
   color: #8d2f1f;
-}
-
-.agenda-card.is-shared .agenda-status-badge {
-  background: #dff1ed;
-  color: #23574f;
-}
-
-.agenda-card.is-completed .agenda-status-badge {
-  background: #e2f0df;
-  color: #315e31;
 }
 
 .agenda-card.is-dropped .agenda-status-badge {
@@ -300,7 +260,7 @@
   line-height: 1.4;
 }
 
-.agenda-card-summary {
+.agenda-card-description {
   display: -webkit-box;
   margin: 10px 0 16px;
   overflow: hidden;
@@ -317,12 +277,7 @@
   margin-top: auto;
 }
 
-.agenda-participant-progress {
-  display: grid;
-  gap: 6px;
-}
-
-.agenda-progress-copy {
+.agenda-card-participants {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -332,18 +287,9 @@
   font-weight: 700;
 }
 
-.agenda-progress-track {
-  height: 7px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #dfdbd3;
-}
-
-.agenda-progress-fill {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--teal);
+.agenda-card-participants strong {
+  color: var(--ink);
+  font-size: 0.88rem;
 }
 
 .agenda-card-button {
@@ -436,14 +382,6 @@
   display: grid;
   gap: 26px;
   padding: 24px;
-}
-
-.agenda-detail-lead {
-  margin: 0;
-  color: var(--ink);
-  font-size: 1.06rem;
-  font-weight: 700;
-  line-height: 1.75;
 }
 
 .agenda-detail-description,

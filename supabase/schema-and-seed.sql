@@ -38,9 +38,8 @@ create table if not exists public.agendas (
     proposed_date date default current_date not null,
     title varchar(255) not null,
     category varchar(80),
-    summary text,
     description text,
-    status varchar(20) default 'proposed' not null,
+    status varchar(20) default 'discussing' not null,
     status_note text,
     participants jsonb default '[]'::jsonb not null,
     tags jsonb default '[]'::jsonb not null,
@@ -48,7 +47,7 @@ create table if not exists public.agendas (
     next_meeting_at timestamp with time zone,
     next_meeting_location varchar(255),
     constraint agendas_status_check check (
-        status in ('proposed', 'recruiting', 'discussing', 'shared', 'completed', 'dropped')
+        status in ('discussing', 'dropped')
     ),
     constraint agendas_participants_array_check check (jsonb_typeof(participants) = 'array'),
     constraint agendas_tags_array_check check (jsonb_typeof(tags) = 'array'),

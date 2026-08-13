@@ -2,14 +2,10 @@ import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 import { TIMELINE_SUPABASE_CONFIG } from "./config.js";
 
 const TABLE_NAME = "agendas";
-const ACTIVE_STATUSES = ["proposed", "recruiting", "discussing", "shared"];
-const VALID_STATUSES = ["proposed", "recruiting", "discussing", "shared", "completed", "dropped"];
+const ACTIVE_STATUSES = ["discussing"];
+const VALID_STATUSES = ["discussing", "dropped"];
 const STATUS_META = {
-  proposed: { label: "제안 접수", icon: "lightbulb" },
-  recruiting: { label: "참여자 모집", icon: "users" },
   discussing: { label: "논의 중", icon: "messages-square" },
-  shared: { label: "운영위 공유", icon: "send" },
-  completed: { label: "논의 완료", icon: "circle-check" },
   dropped: { label: "논의 중단", icon: "archive" }
 };
 const HTML_ESCAPE_MAP = {
@@ -28,7 +24,7 @@ let resizeFrameId = 0;
 let agendaDataStatus = null;
 let totalAgendaCount = null;
 let activeAgendaCount = null;
-let readyAgendaCount = null;
+let droppedAgendaCount = null;
 let agendaSearchInput = null;
 let agendaStatusFilter = null;
 let agendaFilterReset = null;
@@ -58,7 +54,7 @@ function cacheElements() {
   agendaDataStatus = document.getElementById("agendaDataStatus");
   totalAgendaCount = document.getElementById("totalAgendaCount");
   activeAgendaCount = document.getElementById("activeAgendaCount");
-  readyAgendaCount = document.getElementById("readyAgendaCount");
+  droppedAgendaCount = document.getElementById("droppedAgendaCount");
   agendaSearchInput = document.getElementById("agendaSearchInput");
   agendaStatusFilter = document.getElementById("agendaStatusFilter");
   agendaFilterReset = document.getElementById("agendaFilterReset");
@@ -170,7 +166,6 @@ function normalizeAgenda(rawAgenda, index) {
     proposed_date: normalizeDateValue(sourceAgenda.proposed_date),
     title: String(sourceAgenda.title || "제목 없음").trim(),
     category: String(sourceAgenda.category || "").trim(),
-    summary: String(sourceAgenda.summary || "").trim(),
     description: String(sourceAgenda.description || "").trim(),
     status: sanitizeStatus(sourceAgenda.status),
     status_note: String(sourceAgenda.status_note || "").trim(),
@@ -269,8 +264,8 @@ function normalizeDateTimeValue(value) {
 } // End of normalizeDateTimeValue
 
 function sanitizeStatus(value) {
-  const rawValue = String(value || "proposed").trim();
-  return VALID_STATUSES.includes(rawValue) ? rawValue : "proposed";
+  const rawValue = String(value || "discussing").trim();
+  return VALID_STATUSES.includes(rawValue) ? rawValue : "discussing";
 } // End of sanitizeStatus
 
 function sortAgendas(nextAgendas) {
@@ -294,11 +289,7 @@ function compareAgendas(firstAgenda, secondAgenda) {
 } // End of compareAgendas
 
 function getArchiveRank(status) {
-  if (ACTIVE_STATUSES.includes(status)) {
-    return 0;
-  }
-
-  return status === "completed" ? 1 : 2;
+  return status === "dropped" ? 1 : 0;
 } // End of getArchiveRank
 
 function handleFilterChange() {
@@ -342,10 +333,6 @@ function matchesStatusFilter(agenda, statusFilter) {
     return true;
   }
 
-  if (statusFilter === "active") {
-    return ACTIVE_STATUSES.includes(agenda.status);
-  }
-
   return agenda.status === statusFilter;
 } // End of matchesStatusFilter
 
@@ -360,7 +347,6 @@ function getAgendaSearchText(agenda) {
   const searchText = [
     agenda.title,
     agenda.category,
-    agenda.summary,
     agenda.description,
     agenda.status_note,
     agenda.participants.join(" "),
@@ -430,10 +416,6 @@ function createAgendaCard(agenda) {
   const card = document.createElement("article");
   const statusMeta = getStatusMeta(agenda.status);
   const participantCount = agenda.participants.length;
-  const progressPercent = Math.min(100, Math.round((participantCount / 3) * 100));
-  const progressLabel = participantCount >= 3
-    ? `장터 개설 기준 충족 · ${participantCount}명`
-    : `${participantCount}/3명 모임 기준`;
   card.className = `agenda-card is-${agenda.status}`;
   card.dataset.agendaId = agenda.id;
   card.innerHTML = `
@@ -446,16 +428,11 @@ function createAgendaCard(agenda) {
     </div>
     <div class="agenda-card-category">${escapeHtml(agenda.category || "시민 제안")}</div>
     <h2 class="agenda-card-title">${escapeHtml(agenda.title)}</h2>
-    <p class="agenda-card-summary">${escapeHtml(agenda.summary || agenda.description || "상세 내용을 준비 중입니다.")}</p>
+    <p class="agenda-card-description">${escapeHtml(agenda.description || "상세 내용을 준비 중입니다.")}</p>
     <div class="agenda-card-footer">
-      <div class="agenda-participant-progress" aria-label="${escapeHtml(progressLabel)}">
-        <div class="agenda-progress-copy">
-          <span>함께 논의하는 사람</span>
-          <strong>${escapeHtml(progressLabel)}</strong>
-        </div>
-        <div class="agenda-progress-track" aria-hidden="true">
-          <span class="agenda-progress-fill" style="width: ${progressPercent}%"></span>
-        </div>
+      <div class="agenda-card-participants">
+        <span>함께 논의하는 사람</span>
+        <strong>${escapeHtml(String(participantCount))}명</strong>
       </div>
       <button class="agenda-card-button" type="button" data-agenda-id="${escapeHtml(agenda.id)}" aria-expanded="false">
         <span>상세 보기</span>
@@ -543,7 +520,7 @@ function createAgendaDetail(agenda) {
           ${escapeHtml(statusMeta.label)}
         </span>
         <h2 class="agenda-detail-title">${escapeHtml(agenda.title)}</h2>
-        <p class="agenda-detail-meta">${escapeHtml(agenda.category || "시민 제안")} · ${escapeHtml(formatDate(agenda.proposed_date))} 제안</p>
+        <p class="agenda-detail-meta">${escapeHtml(agenda.category || "시민 제안")} · ${escapeHtml(formatDate(agenda.proposed_date))} 등록</p>
       </div>
       <button class="agenda-detail-close" type="button" aria-label="상세 내용 닫기">
         <i data-lucide="x" aria-hidden="true"></i>
@@ -563,9 +540,6 @@ function createAgendaDetail(agenda) {
 } // End of createAgendaDetail
 
 function buildAgendaDescriptionHtml(agenda) {
-  const summaryHtml = agenda.summary
-    ? `<p class="agenda-detail-lead">${escapeHtml(agenda.summary)}</p>`
-    : "";
   const descriptionHtml = agenda.description
     ? `<p class="agenda-detail-description">${escapeHtml(agenda.description)}</p>`
     : "";
@@ -578,11 +552,11 @@ function buildAgendaDescriptionHtml(agenda) {
     `
     : "";
 
-  if (!summaryHtml && !descriptionHtml && !statusNoteHtml) {
+  if (!descriptionHtml && !statusNoteHtml) {
     return '<p class="agenda-muted-copy">상세 내용을 준비 중입니다.</p>';
   }
 
-  return `<section class="agenda-detail-section">${summaryHtml}${descriptionHtml}${statusNoteHtml}</section>`;
+  return `<section class="agenda-detail-section">${descriptionHtml}${statusNoteHtml}</section>`;
 } // End of buildAgendaDescriptionHtml
 
 function buildParticipantsHtml(participants) {
@@ -752,21 +726,21 @@ function findAgendaById(agendaId) {
 
 function renderSummary(nextAgendas) {
   let activeCount = 0;
-  let readyCount = 0;
+  let droppedCount = 0;
 
   for (let index = 0; index < nextAgendas.length; index += 1) {
     if (ACTIVE_STATUSES.includes(nextAgendas[index].status)) {
       activeCount += 1;
     }
 
-    if (nextAgendas[index].participants.length >= 3 && ACTIVE_STATUSES.includes(nextAgendas[index].status)) {
-      readyCount += 1;
+    if (nextAgendas[index].status === "dropped") {
+      droppedCount += 1;
     }
   }
 
   totalAgendaCount.textContent = String(nextAgendas.length);
   activeAgendaCount.textContent = String(activeCount);
-  readyAgendaCount.textContent = String(readyCount);
+  droppedAgendaCount.textContent = String(droppedCount);
 } // End of renderSummary
 
 function renderDataStatus(count) {

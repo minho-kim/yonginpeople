@@ -3,14 +3,10 @@ import { TIMELINE_SUPABASE_CONFIG } from "./config.js";
 
 const TABLE_NAME = "agendas";
 const DRAFT_STORAGE_KEY = "yonginAgendaAdminDraft";
-const ACTIVE_STATUSES = ["proposed", "recruiting", "discussing", "shared"];
-const VALID_STATUSES = ["proposed", "recruiting", "discussing", "shared", "completed", "dropped"];
+const ACTIVE_STATUSES = ["discussing"];
+const VALID_STATUSES = ["discussing", "dropped"];
 const STATUS_LABELS = {
-  proposed: "제안 접수",
-  recruiting: "참여자 모집",
   discussing: "논의 중",
-  shared: "운영위 공유",
-  completed: "논의 완료",
   dropped: "논의 중단"
 };
 
@@ -38,7 +34,6 @@ let proposedDate = null;
 let agendaStatus = null;
 let agendaCategory = null;
 let agendaTitle = null;
-let agendaSummary = null;
 let agendaDescription = null;
 let statusNote = null;
 let participants = null;
@@ -91,7 +86,6 @@ function cacheElements() {
   agendaStatus = document.getElementById("agendaStatus");
   agendaCategory = document.getElementById("agendaCategory");
   agendaTitle = document.getElementById("agendaTitle");
-  agendaSummary = document.getElementById("agendaSummary");
   agendaDescription = document.getElementById("agendaDescription");
   statusNote = document.getElementById("statusNote");
   participants = document.getElementById("participants");
@@ -385,7 +379,6 @@ function renderRecordForm(record) {
   agendaStatus.value = record.status;
   agendaCategory.value = record.category;
   agendaTitle.value = record.title;
-  agendaSummary.value = record.summary;
   agendaDescription.value = record.description;
   statusNote.value = record.status_note;
   participants.value = record.participants.join("\n");
@@ -405,10 +398,9 @@ function resetFormForNewRecord() {
   selectedRecordId = "";
   recordId.value = "";
   proposedDate.value = getTodayInputValue();
-  agendaStatus.value = "proposed";
+  agendaStatus.value = "discussing";
   agendaCategory.value = "";
   agendaTitle.value = "";
-  agendaSummary.value = "";
   agendaDescription.value = "";
   statusNote.value = "";
   participants.value = "";
@@ -468,7 +460,14 @@ async function handleSaveSubmit(event) {
 
 function buildPayloadFromForm() {
   if (!proposedDate.value || !agendaTitle.value.trim()) {
-    setStatus("제안 접수일과 의제 제목은 필수입니다.", "danger");
+    setStatus("의제 등록일과 제목은 필수입니다.", "danger");
+    return null;
+  }
+
+  const parsedParticipants = parseDelimitedValues(participants.value);
+  if (parsedParticipants.length < 3) {
+    setStatus("참여자는 3명 이상 입력해 주세요.", "danger");
+    participants.focus();
     return null;
   }
 
@@ -488,11 +487,10 @@ function buildPayloadFromForm() {
     proposed_date: proposedDate.value,
     title: agendaTitle.value.trim(),
     category: agendaCategory.value.trim() || null,
-    summary: agendaSummary.value.trim() || null,
     description: agendaDescription.value.trim() || null,
     status: sanitizeStatus(agendaStatus.value),
     status_note: statusNote.value.trim() || null,
-    participants: parseDelimitedValues(participants.value),
+    participants: parsedParticipants,
     tags: parseDelimitedValues(agendaTags.value),
     updates: updateResult.updates,
     next_meeting_at: meetingDateTime.value,
@@ -744,8 +742,7 @@ function getMeetingInputValues(dateTimeValue) {
 
 function updateParticipantCountPreview() {
   const participantCount = parseDelimitedValues(participants.value).length;
-  participantCountPreview.textContent = participantCount >= 3 ? `${participantCount}명 · 장터 가능` : `${participantCount}/3명`;
-  participantCountPreview.classList.toggle("is-ready", participantCount >= 3);
+  participantCountPreview.textContent = `${participantCount}명`;
 } // End of updateParticipantCountPreview
 
 function handleFormInput() {
@@ -766,7 +763,6 @@ function saveFormDraft() {
     status: sanitizeStatus(agendaStatus.value),
     category: agendaCategory.value,
     title: agendaTitle.value,
-    summary: agendaSummary.value,
     description: agendaDescription.value,
     status_note: statusNote.value,
     participants: participants.value,
@@ -832,7 +828,6 @@ function restoreFormDraft() {
   agendaStatus.value = sanitizeStatus(draft.status);
   agendaCategory.value = String(draft.category || "");
   agendaTitle.value = String(draft.title || "");
-  agendaSummary.value = String(draft.summary || "");
   agendaDescription.value = String(draft.description || "");
   statusNote.value = String(draft.status_note || "");
   participants.value = String(draft.participants || "");
@@ -892,7 +887,7 @@ function isMeaningfulDraft(draft) {
     return false;
   }
 
-  if (draft.record_id || draft.title || draft.summary || draft.description || draft.status_note || draft.participants || draft.tags || draft.next_meeting_location) {
+  if (draft.record_id || draft.title || draft.description || draft.status_note || draft.participants || draft.tags || draft.next_meeting_location) {
     return true;
   }
 
@@ -918,7 +913,6 @@ function normalizeRecord(rawRecord, index) {
     proposed_date: normalizeDateValue(sourceRecord.proposed_date),
     title: String(sourceRecord.title || ""),
     category: String(sourceRecord.category || ""),
-    summary: String(sourceRecord.summary || ""),
     description: String(sourceRecord.description || ""),
     status: sanitizeStatus(sourceRecord.status),
     status_note: String(sourceRecord.status_note || ""),
@@ -1053,8 +1047,8 @@ function formatDate(value) {
 } // End of formatDate
 
 function sanitizeStatus(value) {
-  const rawValue = String(value || "proposed").trim();
-  return VALID_STATUSES.includes(rawValue) ? rawValue : "proposed";
+  const rawValue = String(value || "discussing").trim();
+  return VALID_STATUSES.includes(rawValue) ? rawValue : "discussing";
 } // End of sanitizeStatus
 
 function getStatusLabel(status) {
