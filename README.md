@@ -1,6 +1,6 @@
-# 시민공론장 히스토리
+# 시민공론장 히스토리와 의제 장터
 
-Supabase Dashboard에서 `timeline_history` 데이터를 관리하면 원페이지 타임라인과 단일 상세 모달에 즉시 반영되는 정적 웹 서비스입니다.
+Supabase 기반으로 시민공론장 운영 히스토리와 연석회의 의제의 제안·논의·완료·중단 과정을 공개하는 정적 웹 서비스입니다.
 
 ## 파일 구성
 
@@ -11,6 +11,8 @@ Supabase Dashboard에서 `timeline_history` 데이터를 관리하면 원페이�
 - `app.js`: Supabase 조회, realtime 구독, 이벤트 위임, 모달 바인딩
 - `admin.js`: 기록 생성/수정/삭제, Storage 사진/PDF 업로드, 기사 링크 관리
 - `admin.css`: 관리자 화면 전용 스타일
+- `agendas.html`, `agendas.css`, `agendas.js`: 공개 의제 카드, 검색, 상태 필터, 인라인 상세 화면
+- `agenda-admin.html`, `agenda-admin.css`, `agenda-admin.js`: 관리자용 의제 생성·수정·삭제 화면
 - `supabase/schema-and-seed.sql`: 테이블, RLS 정책, Storage 버킷, 2026년 초기 데이터
 
 ## Supabase 설정
@@ -55,6 +57,17 @@ http://localhost:4173/admin.html
 
 새 관리자 계정을 나중에 추가했다면 Supabase Dashboard에서 Auth 사용자를 만든 뒤 `admin_users` 테이블에도 해당 `user_id`를 추가해야 합니다. 현재 SQL은 실행 시점에 이미 존재하는 Auth 사용자들을 자동 등록합니다.
 
+## 의제 장터
+
+```txt
+http://localhost:4173/agendas.html
+http://localhost:4173/agenda-admin.html
+```
+
+공개 화면은 `제안 접수`, `참여자 모집`, `논의 중`, `운영위 공유`, `논의 완료`, `논의 중단` 상태를 카드 색과 아이콘으로 구분합니다. 제목, 내용, 참여자, 태그, 상태 메모, 빌드업 기록 전체를 검색할 수 있어 중단된 의제도 기록으로 다시 찾을 수 있습니다. 공개 참여자가 3명 이상이면 장터 개설 기준을 충족한 것으로 표시합니다.
+
+의제 입력은 관리자만 할 수 있습니다. `agenda-admin.html`에서 의제 내용, 공개 참여자, 태그, 다음 모임, 빌드업 기록을 한 화면에서 관리합니다. 중단된 의제는 삭제하지 않고 `논의 중단` 상태와 이유를 남기는 방식을 권장합니다. 참여자에는 공개에 동의한 이름만 입력하고 연락처는 저장하지 않습니다.
+
 ## 보안 및 배포 메모
 
 - 프론트엔드에는 Publishable key 또는 legacy anon public key만 둡니다. `service_role`, `secret`, `sb_secret_...` 키는 절대 넣지 않습니다.
@@ -64,7 +77,7 @@ http://localhost:4173/admin.html
 - `event-documents` 업로드는 PDF 형식의 30MB 이하 파일로 제한합니다.
 - Supabase Auth의 유출 비밀번호 보호는 Dashboard의 Auth 설정에서 별도로 켜는 것을 권장합니다.
 - Bootstrap/Lucide CDN은 고정 버전과 SRI 무결성 값을 사용합니다. Supabase SDK도 현재 동작 확인한 `2.108.2`로 고정했습니다.
-- 실제 배포 시 공개 웹 루트에는 `index.html`, `admin.html`, `app.js`, `admin.js`, `config.js`, `styles.css`, `admin.css`만 올리고 `README.md`, `WORK_HISTORY.md`, `supabase/` 같은 내부 작업 파일은 제외합니다.
+- 실제 배포 시 공개 웹 루트에는 HTML, JavaScript, CSS, `config.js`만 올리고 `README.md`, `WORK_HISTORY.md`, `supabase/` 같은 내부 작업 파일은 제외합니다.
 
 ## 로컬 실행
 
