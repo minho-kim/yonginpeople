@@ -552,6 +552,17 @@ a:hover {
   backdrop-filter: blur(10px);
 }
 
+.site-footer-copy {
+  display: flex;
+  margin: 0;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .site-footer a {
   color: var(--ink);
   font-weight: 700;
@@ -565,7 +576,7 @@ a:hover {
 
 @media (max-width: 991.98px) {
   body {
-    padding-bottom: 72px;
+    padding-bottom: 104px;
   }
 
   .intro-section {
@@ -632,6 +643,25 @@ a:hover {
 }
 
 @media (max-width: 575.98px) {
+  body {
+    padding-bottom: 132px;
+  }
+
+  .site-footer {
+    padding: 13px 0;
+  }
+
+  .site-footer-copy {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.84rem;
+  }
+
+  .site-footer-copy > span[aria-hidden="true"] {
+    display: none;
+  }
+
   .display-title {
     font-size: 1.5rem;
     line-height: 1.3;
