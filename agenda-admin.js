@@ -460,7 +460,7 @@ async function handleSaveSubmit(event) {
 
 function buildPayloadFromForm() {
   if (!proposedDate.value || !agendaTitle.value.trim()) {
-    setStatus("의제 등록일과 제목은 필수입니다.", "danger");
+    setStatus("논의 시작일과 제목은 필수입니다.", "danger");
     return null;
   }
 
@@ -548,7 +548,7 @@ function handleAddUpdateClick() {
     emptyMessage.remove();
   }
 
-  updateRows.appendChild(createUpdateRow({ date: getTodayInputValue(), title: "", content: "" }));
+  updateRows.appendChild(createUpdateRow({ date: getDefaultUpdateDate(), title: "", content: "" }));
   renderIcons();
   saveFormDraft();
 } // End of handleAddUpdateClick
@@ -584,7 +584,7 @@ function renderUpdateRows(updates) {
   }
 
   const fragment = document.createDocumentFragment();
-  const sortedUpdates = [...updates].sort(compareUpdatesNewestFirst);
+  const sortedUpdates = [...updates].sort(compareUpdatesOldestFirst);
 
   for (let index = 0; index < sortedUpdates.length; index += 1) {
     fragment.appendChild(createUpdateRow(sortedUpdates[index]));
@@ -601,6 +601,7 @@ function createUpdateRow(update) {
   dateInput.className = "form-control agenda-update-date";
   dateInput.type = "date";
   dateInput.value = normalizeDateValue(update.date);
+  dateInput.min = normalizeDateValue(proposedDate.value);
   dateInput.setAttribute("aria-label", "기록 날짜");
 
   const titleInput = document.createElement("input");
@@ -656,6 +657,17 @@ function getUpdatesFromForm() {
       };
     }
 
+    if (proposedDate.value && dateValue < proposedDate.value) {
+      if (dateInput) {
+        dateInput.focus();
+      }
+      return {
+        isValid: false,
+        message: "빌드업 기록 날짜는 논의 시작일보다 빠를 수 없습니다.",
+        updates: []
+      };
+    }
+
     updates.push({
       date: dateValue,
       title: titleValue || "논의 기록",
@@ -666,7 +678,7 @@ function getUpdatesFromForm() {
   return {
     isValid: true,
     message: "",
-    updates: updates.sort(compareUpdatesNewestFirst)
+    updates: updates.sort(compareUpdatesOldestFirst)
   };
 } // End of getUpdatesFromForm
 
@@ -746,9 +758,19 @@ function updateParticipantCountPreview() {
 } // End of updateParticipantCountPreview
 
 function handleFormInput() {
+  syncUpdateDateMinimums();
   updateParticipantCountPreview();
   saveFormDraft();
 } // End of handleFormInput
+
+function syncUpdateDateMinimums() {
+  const minimumDate = normalizeDateValue(proposedDate.value);
+  const dateInputs = updateRows.querySelectorAll(".agenda-update-date");
+
+  for (let index = 0; index < dateInputs.length; index += 1) {
+    dateInputs[index].min = minimumDate;
+  }
+} // End of syncUpdateDateMinimums
 
 function saveFormDraft() {
   const draftStorage = getDraftStorage();
@@ -804,7 +826,7 @@ function getUpdateDraftsFromForm() {
     }
   }
 
-  return updates;
+  return updates.sort(compareUpdatesOldestFirst);
 } // End of getUpdateDraftsFromForm
 
 function restoreFormDraft() {
@@ -979,7 +1001,7 @@ function normalizeUpdates(value) {
     }
   }
 
-  return normalizedUpdates.sort(compareUpdatesNewestFirst);
+  return normalizedUpdates.sort(compareUpdatesOldestFirst);
 } // End of normalizeUpdates
 
 function sortRecords(nextRecords) {
@@ -997,9 +1019,9 @@ function compareRecords(firstRecord, secondRecord) {
   return String(secondRecord.updated_at || "").localeCompare(String(firstRecord.updated_at || ""));
 } // End of compareRecords
 
-function compareUpdatesNewestFirst(firstUpdate, secondUpdate) {
-  return String(secondUpdate.date || "").localeCompare(String(firstUpdate.date || ""));
-} // End of compareUpdatesNewestFirst
+function compareUpdatesOldestFirst(firstUpdate, secondUpdate) {
+  return String(firstUpdate.date || "").localeCompare(String(secondUpdate.date || ""));
+} // End of compareUpdatesOldestFirst
 
 function findRecordById(nextRecordId) {
   const recordIdValue = String(nextRecordId || "");
@@ -1034,6 +1056,17 @@ function getTodayInputValue() {
 
   return `${partMap.year}-${partMap.month}-${partMap.day}`;
 } // End of getTodayInputValue
+
+function getDefaultUpdateDate() {
+  const discussionStartDate = normalizeDateValue(proposedDate.value);
+  const today = getTodayInputValue();
+
+  if (discussionStartDate && discussionStartDate > today) {
+    return discussionStartDate;
+  }
+
+  return today;
+} // End of getDefaultUpdateDate
 
 function formatDate(value) {
   const normalizedDate = normalizeDateValue(value);

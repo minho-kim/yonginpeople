@@ -239,12 +239,12 @@ function normalizeUpdates(value) {
     }
   }
 
-  return normalizedUpdates.sort(compareUpdatesNewestFirst);
+  return normalizedUpdates.sort(compareUpdatesOldestFirst);
 } // End of normalizeUpdates
 
-function compareUpdatesNewestFirst(firstUpdate, secondUpdate) {
-  return String(secondUpdate.date || "").localeCompare(String(firstUpdate.date || ""));
-} // End of compareUpdatesNewestFirst
+function compareUpdatesOldestFirst(firstUpdate, secondUpdate) {
+  return String(firstUpdate.date || "").localeCompare(String(secondUpdate.date || ""));
+} // End of compareUpdatesOldestFirst
 
 function normalizeDateValue(value) {
   const rawValue = String(value || "").trim();
@@ -520,7 +520,7 @@ function createAgendaDetail(agenda) {
           ${escapeHtml(statusMeta.label)}
         </span>
         <h2 class="agenda-detail-title">${escapeHtml(agenda.title)}</h2>
-        <p class="agenda-detail-meta">${escapeHtml(agenda.category || "시민 제안")} · ${escapeHtml(formatDate(agenda.proposed_date))} 등록</p>
+        <p class="agenda-detail-meta">${escapeHtml(agenda.category || "시민 제안")} · ${escapeHtml(formatDate(agenda.proposed_date))} 논의 시작</p>
       </div>
       <button class="agenda-detail-close" type="button" aria-label="상세 내용 닫기">
         <i data-lucide="x" aria-hidden="true"></i>
