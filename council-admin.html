@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>용인시의회 모니터링 관리자</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
+      crossorigin="anonymous"
+    >
+    <link rel="stylesheet" href="./admin.css">
+    <link rel="stylesheet" href="./council-admin.css">
+  </head>
+  <body>
+    <header class="admin-topbar">
+      <div class="container-fluid px-3 px-lg-4">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+          <div>
+            <p class="admin-kicker mb-1">Council Monitoring Admin</p>
+            <h1 class="admin-title mb-0">용인시의회 모니터링 관리자</h1>
+          </div>
+          <a class="btn btn-outline-secondary btn-sm icon-button" href="./council-monitoring.html" target="_blank" rel="noopener noreferrer">
+            <i data-lucide="eye-off" aria-hidden="true"></i>
+            <span>비공개 안내 화면</span>
+          </a>
+        </div>
+      </div>
+    </header>
+
+    <nav class="admin-section-nav" aria-label="관리 영역">
+      <div class="container-fluid px-3 px-lg-4">
+        <div class="admin-section-tabs">
+          <a href="./admin.html">운영 히스토리</a>
+          <a href="./agenda-admin.html">의제 장터</a>
+          <a href="./participatory-budget-admin.html">주민참여예산</a>
+          <a class="is-active" href="./council-admin.html" aria-current="page">시의회 모니터링</a>
+        </div>
+      </div>
+    </nav>
+
+    <main class="admin-shell">
+      <div class="container-fluid px-3 px-lg-4">
+        <div id="configNotice" class="alert alert-warning d-none" role="alert">
+          Supabase 설정을 확인해 주세요.
+        </div>
+        <div id="councilAdminStatus" class="admin-status" role="status" aria-live="polite"></div>
+
+        <div class="alert alert-info council-private-notice" role="note">
+          공개 페이지는 현재 준비 화면으로 가려져 있습니다. 여기에서 입력한 기록과 자료는 관리자만 확인할 수 있습니다.
+        </div>
+
+        <section id="authSection" class="auth-layout">
+          <div class="admin-panel auth-panel">
+            <h2 class="panel-title mb-3">관리자 로그인</h2>
+            <form id="loginForm">
+              <div class="mb-3">
+                <label class="form-label" for="loginEmail">이메일</label>
+                <input id="loginEmail" class="form-control" type="email" autocomplete="username" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="loginPassword">비밀번호</label>
+                <input id="loginPassword" class="form-control" type="password" autocomplete="current-password" required>
+              </div>
+              <button id="loginButton" class="btn btn-primary icon-button" type="submit">
+                <i data-lucide="log-in" aria-hidden="true"></i>
+                <span>로그인</span>
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <section id="councilAdminSection" class="d-none">
+          <div class="panel-toolbar">
+            <div>
+              <strong id="councilRecordCountText">현재 0개의 기록이 있습니다.</strong>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+              <button id="councilRefreshButton" class="btn btn-outline-secondary btn-sm icon-button" type="button">
+                <i data-lucide="refresh-cw" aria-hidden="true"></i>
+                <span>새로고침</span>
+              </button>
+              <button id="councilLogoutButton" class="btn btn-outline-secondary btn-sm icon-button" type="button">
+                <i data-lucide="log-out" aria-hidden="true"></i>
+                <span>로그아웃</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="council-admin-grid">
+            <aside class="admin-panel list-panel">
+              <div class="panel-toolbar">
+                <h2 class="panel-title">모니터링 기록</h2>
+                <button id="councilNewRecordButton" class="btn btn-primary btn-sm icon-button" type="button">
+                  <i data-lucide="plus" aria-hidden="true"></i>
+                  <span>새 기록</span>
+                </button>
+              </div>
+              <label class="council-admin-search">
+                <span class="visually-hidden">관리 기록 검색</span>
+                <i data-lucide="search" aria-hidden="true"></i>
+                <input id="councilAdminSearch" type="search" placeholder="제목, 회기, 의원 검색">
+              </label>
+              <div id="councilRecordList" class="record-list"></div>
+            </aside>
+
+            <section class="admin-panel edit-panel">
+              <form id="councilRecordForm">
+                <div class="panel-toolbar">
+                  <div>
+                    <h2 id="councilFormTitle" class="panel-title">새 기록</h2>
+                    <p id="councilFormSubtitle" class="panel-copy mb-0">저장 전</p>
+                  </div>
+                  <div class="d-flex flex-wrap gap-2">
+                    <button id="councilDeleteButton" class="btn btn-outline-danger btn-sm icon-button d-none" type="button">
+                      <i data-lucide="trash-2" aria-hidden="true"></i>
+                      <span>삭제</span>
+                    </button>
+                    <button id="councilSaveButton" class="btn btn-primary btn-sm icon-button" type="submit">
+                      <i data-lucide="save" aria-hidden="true"></i>
+                      <span>저장</span>
+                    </button>
+                  </div>
+                </div>
+
+                <input id="councilRecordId" type="hidden">
+
+                <div class="row g-3">
+                  <div class="col-12 col-md-4">
+                    <label class="form-label" for="monitoringDate">모니터링 날짜</label>
+                    <input id="monitoringDate" class="form-control" type="date" required>
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label" for="councilTerm">시의회 대수</label>
+                    <input id="councilTerm" class="form-control" type="text" maxlength="40" placeholder="예: 제9대">
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label" for="monitoringPublished">향후 공개 상태</label>
+                    <select id="monitoringPublished" class="form-select">
+                      <option value="false">비공개</option>
+                      <option value="true">공개 예정</option>
+                    </select>
+                    <p class="form-note mb-0">전체 공개 전환 전까지는 공개 예정 기록도 외부에 표시되지 않습니다.</p>
+                  </div>
+
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="sessionName">회기</label>
+                    <input id="sessionName" class="form-control" type="text" maxlength="120" placeholder="예: 제293회 임시회">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label class="form-label" for="committeeName">위원회</label>
+                    <input id="committeeName" class="form-control" type="text" maxlength="120" placeholder="예: 자치행정위원회">
+                  </div>
+                  <div class="col-12 col-md-4">
+                    <label class="form-label" for="meetingType">활동 유형</label>
+                    <select id="meetingType" class="form-select">
+                      <option value="본회의">본회의</option>
+                      <option value="상임위원회">상임위원회</option>
+                      <option value="행정사무감사">행정사무감사</option>
+                      <option value="예산·결산 심사">예산·결산 심사</option>
+                      <option value="조례·안건 심사">조례·안건 심사</option>
+                      <option value="의원 활동">의원 활동</option>
+                      <option value="기타">기타</option>
+                    </select>
+                  </div>
+                  <div class="col-12 col-md-8">
+                    <label class="form-label" for="monitoringTitle">기록 제목</label>
+                    <input id="monitoringTitle" class="form-control" type="text" maxlength="255" required>
+                  </div>
+
+                  <div class="col-12">
+                    <label class="form-label" for="monitoringDescription">모니터링 내용</label>
+                    <textarea id="monitoringDescription" class="form-control" rows="7"></textarea>
+                  </div>
+                  <div class="col-12 col-lg-6">
+                    <label class="form-label" for="monitoringMembers">관련 의원</label>
+                    <textarea id="monitoringMembers" class="form-control" rows="4" placeholder="이름을 쉼표 또는 줄바꿈으로 구분"></textarea>
+                  </div>
+                  <div class="col-12 col-lg-6">
+                    <label class="form-label" for="monitoringKeywords">검색 키워드</label>
+                    <textarea id="monitoringKeywords" class="form-control" rows="4" placeholder="교통, 예산, 처인구"></textarea>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label" for="monitoringSearchText">검색용 자료 본문</label>
+                    <textarea id="monitoringSearchText" class="form-control" rows="6" placeholder="회의록이나 자료에서 검색되어야 할 본문을 붙여넣기"></textarea>
+                    <p class="form-note mb-0">공개 자료의 텍스트만 입력하고 개인정보는 넣지 않습니다.</p>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label" for="monitoringSourceUrl">원문 출처 URL</label>
+                    <input id="monitoringSourceUrl" class="form-control" type="url" placeholder="https://">
+                  </div>
+
+                  <div class="col-12">
+                    <div class="council-admin-section-heading">
+                      <div>
+                        <h3>첨부 자료</h3>
+                        <p>PDF, 한글, 문서, 표, 이미지 파일</p>
+                      </div>
+                    </div>
+                    <div class="council-upload-row">
+                      <input
+                        id="councilDocumentFiles"
+                        class="form-control"
+                        type="file"
+                        multiple
+                        accept=".pdf,.hwp,.hwpx,.doc,.docx,.xls,.xlsx,.csv,.txt,image/jpeg,image/png,image/webp"
+                      >
+                      <button id="councilUploadButton" class="btn btn-outline-primary icon-button" type="button">
+                        <i data-lucide="upload" aria-hidden="true"></i>
+                        <span>선택 파일 업로드</span>
+                      </button>
+                    </div>
+                    <p id="councilUploadStatus" class="form-note" aria-live="polite"></p>
+                    <div id="councilAttachmentList" class="council-admin-attachments"></div>
+                  </div>
+                </div>
+              </form>
+            </section>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <script
+      src="https://unpkg.com/lucide@1.20.0/dist/umd/lucide.min.js"
+      integrity="sha384-vEpkK5oidsrH6UhRc6tAPlgJZ/qXFwumFY+Kx8vBSeZ7NBag809YZCSmxFYGe/pt"
+      crossorigin="anonymous"
+    ></script>
+    <script type="module" src="./council-admin.js"></script>
+  </body>
+</html>

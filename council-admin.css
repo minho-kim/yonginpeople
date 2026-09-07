@@ -1,0 +1,195 @@
+.council-admin-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(270px, 0.34fr) minmax(0, 1fr);
+}
+
+.council-private-notice {
+  margin-bottom: 16px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.council-admin-attachment-actions .is-disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.council-admin-search {
+  position: relative;
+  display: block;
+  margin: 0 14px 12px;
+}
+
+.council-admin-search svg {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  width: 16px;
+  height: 16px;
+  color: var(--admin-muted);
+  transform: translateY(-50%);
+}
+
+.council-admin-search input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px 8px 35px;
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.council-admin-search input:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(42, 91, 118, 0.12);
+  outline: none;
+}
+
+.council-record-badges {
+  display: flex;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.council-record-badges span {
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #edf1f2;
+  color: var(--admin-muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.council-record-badges .is-private {
+  background: #f5e5e1;
+  color: #87392c;
+}
+
+.council-admin-section-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.council-admin-section-heading h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.council-admin-section-heading p {
+  margin: 3px 0 0;
+  color: var(--admin-muted);
+  font-size: 0.78rem;
+}
+
+.council-upload-row {
+  display: grid;
+  align-items: stretch;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.council-admin-attachments {
+  display: grid;
+  gap: 8px;
+}
+
+.council-admin-attachment {
+  display: grid;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  background: #f8fafb;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+}
+
+.council-admin-attachment > svg {
+  width: 18px;
+  height: 18px;
+  color: var(--admin-primary);
+}
+
+.council-admin-attachment-copy {
+  min-width: 0;
+}
+
+.council-admin-attachment-copy strong {
+  display: block;
+  overflow: hidden;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.council-admin-attachment-copy span {
+  color: var(--admin-muted);
+  font-size: 0.72rem;
+}
+
+.council-admin-attachment-actions {
+  display: flex;
+  gap: 5px;
+}
+
+.council-admin-attachment-actions a,
+.council-admin-attachment-actions button {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--admin-line);
+  border-radius: 5px;
+  background: #ffffff;
+  color: var(--admin-ink);
+}
+
+.council-admin-attachment-actions button:hover,
+.council-admin-attachment-actions button:focus {
+  border-color: #b44736;
+  color: #9b3527;
+}
+
+.council-admin-attachment-actions svg {
+  width: 15px;
+  height: 15px;
+}
+
+.council-admin-empty {
+  padding: 18px;
+  border: 1px dashed var(--admin-line);
+  color: var(--admin-muted);
+  font-size: 0.82rem;
+  text-align: center;
+}
+
+@media (max-width: 991.98px) {
+  .council-admin-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 575.98px) {
+  .council-upload-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .council-admin-attachment {
+    align-items: start;
+    grid-template-columns: 18px minmax(0, 1fr);
+  }
+
+  .council-admin-attachment-actions {
+    grid-column: 2;
+  }
+}

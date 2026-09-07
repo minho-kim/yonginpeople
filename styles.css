@@ -673,12 +673,14 @@ a:hover {
 
   .page-tabs {
     min-height: 52px;
+    flex-wrap: wrap;
     gap: 0;
   }
 
   .page-tab {
-    flex: 1 1 50%;
+    flex: 1 1 calc(50% - 1px);
     min-width: 0;
+    min-height: 48px;
     font-size: 0.9rem;
   }
 

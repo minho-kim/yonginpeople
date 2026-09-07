@@ -1,6 +1,6 @@
-# 시민공론장 히스토리와 의제 장터
+# 용인 시민 100인 연석회의 기록 서비스
 
-Supabase 기반으로 시민공론장 운영 히스토리와 연석회의 의제의 제안·논의·완료·중단 과정을 공개하는 정적 웹 서비스입니다.
+Supabase 기반으로 시민공론장 운영 히스토리, 의제 장터, 주민참여예산 제안과 용인시의회 모니터링 준비 자료를 관리하는 정적 웹 서비스입니다.
 
 ## 파일 구성
 
@@ -13,6 +13,10 @@ Supabase 기반으로 시민공론장 운영 히스토리와 연석회의 의제
 - `admin.css`: 관리자 화면 전용 스타일
 - `agendas.html`, `agendas.css`, `agendas.js`: 공개 의제 카드, 검색, 상태 필터, 인라인 상세 화면
 - `agenda-admin.html`, `agenda-admin.css`, `agenda-admin.js`: 관리자용 의제 생성·수정·삭제 화면
+- `participatory-budget.html`, `participatory-budget.css`, `participatory-budget.js`: 주민참여예산 설명, 제안 검색과 상세 화면
+- `participatory-budget-admin.html`, `participatory-budget-admin.css`, `participatory-budget-admin.js`: 주민참여예산 제안과 내부 메모 관리 화면
+- `council-monitoring.html`, `council-monitoring.css`: 용인시의회 모니터링 비공개 준비 화면
+- `council-admin.html`, `council-admin.css`, `council-admin.js`: 의회 모니터링 기록과 비공개 첨부 자료 관리 화면
 - `supabase/schema-and-seed.sql`: 테이블, RLS 정책, Storage 버킷, 2026년 초기 데이터
 
 ## Supabase 설정
@@ -55,6 +59,8 @@ http://localhost:4173/admin.html
 
 관리자 폼은 작성 중인 내용을 브라우저에 임시저장합니다. 저장 전 페이지를 벗어나거나 새로고침해도 다시 관리자 화면에 들어오면 입력 중이던 값이 복원됩니다.
 
+모든 관리자 화면 상단에는 운영 히스토리, 의제 장터, 주민참여예산, 시의회 모니터링 관리 탭이 표시됩니다. 용인시의회 모니터링 관리자는 날짜, 대수, 회기, 위원회, 활동 유형, 의원, 키워드, 검색 본문, 출처 URL과 다중 첨부파일을 생성·수정·삭제할 수 있습니다.
+
 새 관리자 계정을 나중에 추가했다면 Supabase Dashboard에서 Auth 사용자를 만든 뒤 `admin_users` 테이블에도 해당 `user_id`를 추가해야 합니다. 현재 SQL은 실행 시점에 이미 존재하는 Auth 사용자들을 자동 등록합니다.
 
 ## 의제 장터
@@ -75,6 +81,7 @@ http://localhost:4173/agenda-admin.html
 - Storage 버킷은 public URL 표시를 유지하지만, `storage.objects`의 public 목록 조회 정책은 두지 않습니다.
 - `event-images` 업로드는 JPG, PNG, WebP, GIF, HEIC/HEIF 형식의 15MB 이하 파일로 제한합니다.
 - `event-documents` 업로드는 PDF 형식의 30MB 이하 파일로 제한합니다.
+- `council_monitoring` 기록과 `council-documents` 첨부 자료는 공개 전까지 `admin_users` 등록 관리자만 읽고 쓸 수 있습니다. 첨부 자료는 private 버킷에 저장하고 관리자 화면에서 임시 서명 URL로 엽니다.
 - Supabase Auth의 유출 비밀번호 보호는 Dashboard의 Auth 설정에서 별도로 켜는 것을 권장합니다.
 - Bootstrap/Lucide CDN은 고정 버전과 SRI 무결성 값을 사용합니다. Supabase SDK도 현재 동작 확인한 `2.108.2`로 고정했습니다.
 - 실제 배포 시 공개 웹 루트에는 HTML, JavaScript, CSS, `config.js`만 올리고 `README.md`, `WORK_HISTORY.md`, `supabase/` 같은 내부 작업 파일은 제외합니다.

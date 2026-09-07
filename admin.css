@@ -34,6 +34,42 @@ body {
   backdrop-filter: blur(10px);
 }
 
+.admin-section-nav {
+  border-bottom: 1px solid rgba(37, 35, 31, 0.12);
+  background: #ffffff;
+}
+
+.admin-section-tabs {
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  padding: 8px 0;
+  scrollbar-width: thin;
+}
+
+.admin-section-tabs a {
+  flex: 0 0 auto;
+  padding: 8px 11px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--admin-muted);
+  font-size: 0.86rem;
+  font-weight: 800;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-section-tabs a:hover,
+.admin-section-tabs a:focus-visible {
+  border-color: rgba(14, 109, 111, 0.25);
+  color: var(--admin-primary);
+}
+
+.admin-section-tabs a.is-active {
+  background: var(--admin-primary);
+  color: #ffffff;
+}
+
 .admin-kicker {
   color: var(--admin-teal);
   font-size: 0.78rem;
