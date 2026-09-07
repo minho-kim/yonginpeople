@@ -1,0 +1,65 @@
+.budget-admin-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(270px, 0.34fr) minmax(0, 1fr);
+}
+
+.budget-admin-search {
+  position: relative;
+  display: block;
+  margin-bottom: 14px;
+}
+
+.budget-admin-search svg {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  width: 16px;
+  height: 16px;
+  color: var(--admin-muted);
+  transform: translateY(-50%);
+}
+
+.budget-admin-search input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px 8px 35px;
+  border: 1px solid var(--admin-line);
+  border-radius: 6px;
+  background: #ffffff;
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.budget-admin-search input:focus {
+  border-color: var(--admin-primary);
+  box-shadow: 0 0 0 3px rgba(181, 70, 48, 0.12);
+  outline: none;
+}
+
+.budget-record-badges {
+  display: flex;
+  margin-top: 7px;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.budget-record-badges span {
+  padding: 3px 6px;
+  border-radius: 4px;
+  background: #edf1f2;
+  color: var(--admin-muted);
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.budget-record-badges .is-private {
+  background: #f5e5e1;
+  color: #87392c;
+}
+
+@media (max-width: 991.98px) {
+  .budget-admin-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
