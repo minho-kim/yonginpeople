@@ -17,6 +17,10 @@ alter table public.timeline_history enable row level security;
 alter table public.timeline_history drop column if exists sort_order;
 alter table public.timeline_history add column if not exists minutes_pdf_url text;
 
+revoke all on public.timeline_history from anon, authenticated;
+grant select on public.timeline_history to anon, authenticated;
+grant insert, update, delete on public.timeline_history to authenticated;
+
 comment on column public.timeline_history.image_url is
 'Public image URL. Multiple images can be stored as one URL per line for the static admin UI.';
 
@@ -30,6 +34,9 @@ create table if not exists public.admin_users (
 );
 
 alter table public.admin_users enable row level security;
+
+revoke all on public.admin_users from anon, authenticated;
+grant select on public.admin_users to authenticated;
 
 create table if not exists public.agendas (
     id uuid default gen_random_uuid() primary key,
@@ -59,8 +66,6 @@ alter table public.agendas enable row level security;
 revoke all on public.agendas from anon, authenticated;
 grant select on public.agendas to anon, authenticated;
 grant insert, update, delete on public.agendas to authenticated;
-
-grant select on public.admin_users to authenticated;
 
 insert into public.admin_users (user_id, email)
 select id, email

@@ -242,3 +242,12 @@
 - 네 관리자 화면에 공통 관리 탭을 추가해 운영 히스토리, 의제 장터, 주민참여예산, 시의회 모니터링 관리 화면을 오갈 수 있게 했다.
 - `council_monitoring` 테이블과 `council-documents` Storage 버킷을 관리자 전용 읽기·쓰기 정책으로 Supabase에 적용했다.
 - 공개 전까지 첨부 자료를 직접 열 수 없도록 Storage 버킷도 비공개로 설정했다.
+
+## 2026-09-08 공개 운영 대비 보안 보강
+
+- 공개·관리자 테이블의 RLS 정책과 Storage 버킷 정책을 다시 점검하고 익명 Data API 요청으로 공개 읽기와 관리자 전용 읽기·쓰기를 검증했다.
+- `admin_users`는 로그인 사용자의 본인 관리자 행 조회만, `timeline_history`는 공개 조회와 인증 관리자 쓰기만 허용하도록 과도한 테이블 권한을 최소 권한으로 정리했다.
+- 관리자 로그아웃 시 브라우저 `localStorage`의 작성 초안을 삭제하고, 비공개 의회 첨부파일의 임시 서명 URL은 초안에 저장하지 않도록 변경했다.
+- 모든 페이지에 Content Security Policy와 리퍼러 정책을 추가하고, 관리자 페이지가 외부 iframe 안에서 작동하지 않도록 프레임 방어 스크립트를 추가했다. 공개 페이지의 워드프레스 iframe 사용은 유지했다.
+- 전체 JavaScript 문법 검사와 로컬 브라우저 로딩 검사를 통과했으며 CSP 및 JavaScript 오류가 없음을 확인했다.
+- Supabase Security Advisor에는 Dashboard에서 별도로 켜야 하는 `Leaked Password Protection Disabled` 경고만 남아 있다.

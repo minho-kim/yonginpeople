@@ -241,6 +241,7 @@ async function handleLogoutClick() {
     return;
   }
 
+  clearFormDraft();
   showUnauthenticatedState();
 } // End of handleLogoutClick
 

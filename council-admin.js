@@ -261,6 +261,7 @@ async function handleLogoutClick() {
     return;
   }
 
+  clearFormDraft();
   showUnauthenticatedState();
 } // End of handleLogoutClick
 
@@ -1011,7 +1012,7 @@ function saveFormDraft() {
     keywords: monitoringKeywords.value,
     search_text: monitoringSearchText.value,
     source_url: monitoringSourceUrl.value,
-    attachments: normalizeAttachments(currentAttachments)
+    attachments: serializeAttachmentsForStorage(currentAttachments)
   };
 
   if (!isMeaningfulDraft(draft)) {

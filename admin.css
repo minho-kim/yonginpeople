@@ -1,3 +1,7 @@
+html.admin-framed {
+  display: none;
+}
+
 :root {
   --admin-bg: #f4f5f2;
   --admin-panel: #fffdf8;
