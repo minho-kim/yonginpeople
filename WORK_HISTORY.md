@@ -267,3 +267,4 @@
 - 각 요청은 HTTP 200 응답과 JSON 배열 형식을 확인하며, 실패하면 GitHub Actions 실행을 실패 처리한다.
 - Supabase publishable key는 워크플로 파일에 중복 기록하지 않고 GitHub Actions Secret `SUPABASE_PUBLISHABLE_KEY`에서 읽는다.
 - 필요할 때 GitHub Actions 화면이나 CLI에서 수동 실행할 수 있도록 `workflow_dispatch`도 활성화했다.
+- 수동 실행으로 세 공개 테이블이 모두 `OK`를 반환하고 워크플로가 성공 종료되는 것을 확인했다.
