@@ -259,3 +259,11 @@
 - 현재는 시민 제안과 배경을 기록하고 실제 사례가 생기면 `제안 → 반영 → 추적` 흐름을 더한다는 이 페이지의 범위를 명시했다.
 - 행정안전부 제도 소개, 지방재정법 제39조, 세계은행 포르투알레그리 사례 링크를 참고 자료로 연결했다.
 - PC에서는 역사 3단과 의의 2열, 모바일에서는 1열로 전환되며 가로 넘침과 브라우저 오류가 없음을 확인했다.
+
+## 2026-09-30 Supabase 일일 상태 점검 자동화
+
+- 저활동 무료 프로젝트 일시정지 경고에 대응하기 위해 GitHub Actions 기반 일일 상태 점검을 추가했다.
+- 매일 오전 9시 17분(Asia/Seoul)에 `timeline_history`, `agendas`, `participatory_budget_projects` 공개 REST API를 조회한다.
+- 각 요청은 HTTP 200 응답과 JSON 배열 형식을 확인하며, 실패하면 GitHub Actions 실행을 실패 처리한다.
+- Supabase publishable key는 워크플로 파일에 중복 기록하지 않고 GitHub Actions Secret `SUPABASE_PUBLISHABLE_KEY`에서 읽는다.
+- 필요할 때 GitHub Actions 화면이나 CLI에서 수동 실행할 수 있도록 `workflow_dispatch`도 활성화했다.
