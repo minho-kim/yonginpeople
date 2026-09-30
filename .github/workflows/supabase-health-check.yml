@@ -27,6 +27,11 @@ jobs:
         run: |
           set -euo pipefail
 
+          if [[ -z "${SUPABASE_PUBLISHABLE_KEY}" ]]; then
+            echo "::error title=Missing GitHub Actions secret::SUPABASE_PUBLISHABLE_KEY is not configured."
+            exit 1
+          fi
+
           check_table() {
             local table_name="$1"
             local response_file
