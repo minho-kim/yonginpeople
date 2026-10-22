@@ -277,5 +277,6 @@
 - 이 기록은 러너 대기보다 예약 이벤트 생성 단계의 지연을 가리킨다. GitHub 내부 스케줄러의 정확한 원인은 실행 API만으로 확정할 수 없다. 공식 문서도 schedule 이벤트의 지연·누락 가능성을 명시한다.
 - 시간대 해석 경로를 단순화하고 cron 변경으로 예약을 다시 등록하도록 `cron: "17 0 * * *"`(UTC 기본값)로 바꾸고 timezone 항목을 제거했다. 한국은 UTC+09:00이므로 매일 KST 09:17과 같다. 지연 시간을 예상해 임의로 앞당기거나 추가 주기/외부 호스팅을 만들지 않았다.
 - 공개 테이블 3곳의 GET·HTTP 200/JSON 배열 검사, Secret 사용, 수동 실행과 최소 권한은 그대로 유지한다.
-- 검증: YAML 파싱, UTC→Asia/Seoul 시각 변환, 기존 job·수동 트리거 보존, 내장 Bash 문법과 git diff 공백 검사를 수행한다. GitHub 반영 후 같은 workflow를 수동 실행해 공개 조회를 확인한다. 수동 실행은 예약 시각 검증이 아니며 다음 예약(10월 23일 KST 09:17 예정)의 실제 생성 시각은 아직 확인하지 않았다. GitHub Actions만으로 분 단위 정시 실행을 보장할 수 없다.
+- 검증: YAML 파싱, UTC→Asia/Seoul 시각 변환, 기존 job·수동 트리거 보존, 내장 Bash 문법과 git diff 공백 검사를 통과했다. GitHub 반영 후 같은 workflow를 수동 실행해 공개 조회를 확인했다. 수동 실행은 예약 시각 검증이 아니며 다음 예약(10월 23일 KST 09:17 예정)의 실제 생성 시각은 아직 확인하지 않았다. GitHub Actions만으로 분 단위 정시 실행을 보장할 수 없다.
 - 근거: https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule 및 https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#onschedule
+- GitHub 반영·실행 확인: 설정 커밋 `03352f7`을 main에 push한 뒤 수동 실행 https://github.com/minho-kim/yonginpeople/actions/runs/39782612176 이 성공했다. 세 공개 테이블 모두 `OK`를 반환했다. 예약 실행 시각의 개선 여부는 다음 schedule 실행 확인 전까지 미확인이다.
